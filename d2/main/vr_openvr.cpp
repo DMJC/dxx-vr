@@ -263,9 +263,12 @@ fix vr_openvr_eye_offset(int eye)
 	if (!vr_openvr_active() || !vr_system)
 		return 0;
 
-	vr::Hmd_Eye vr_eye = (eye == 0) ? vr::Eye_Left : vr::Eye_Right;
-	vr::HmdMatrix34_t eye_to_head = vr_system->GetEyeToHeadTransform(vr_eye);
-	float offset_m = eye_to_head.m[0][3];
+	vr::ETrackedPropertyError error = vr::TrackedProp_Success;
+	float ipd_m = vr_system->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
+		vr::Prop_UserIpdMeters_Float, &error);
+	if (error != vr::TrackedProp_Success || ipd_m <= 0.0f)
+		ipd_m = 0.064f;
+	float offset_m = (eye == 0) ? -ipd_m * 0.5f : ipd_m * 0.5f;
 	return fl2f(offset_m);
 #else
 	(void)eye;
