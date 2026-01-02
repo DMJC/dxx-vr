@@ -50,6 +50,7 @@ typedef struct Cfg
 	int Grabinput;
 	int ClassicDepth;
 	int BorderlessWindow;
+	int VREnabled;
 } __pack__ Cfg;
 
 extern struct Cfg GameCfg;

@@ -77,6 +77,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "movie.h"
 #include "scores.h"
+#include "vr_openvr.h"
 
 #include "multi.h"
 #include "cntrlcen.h"
@@ -913,6 +914,15 @@ int HandleSystemKey(int key)
 		case KEY_SHIFTED + KEY_F12:
 			multi_define_macro(key);
 			break;		// redefine taunt macros
+
+		case KEY_SHIFTED + KEY_9:
+			vr_openvr_adjust_eye_offset(0.01f);
+			con_printf(CON_NORMAL, "VR eye offset +0.01\n");
+			break;
+		case KEY_SHIFTED + KEY_0:
+			vr_openvr_adjust_eye_offset(-0.01f);
+			con_printf(CON_NORMAL, "VR eye offset -0.01\n");
+			break;
 
 #if defined(__APPLE__) || defined(macintosh)
 		case KEY_9 + KEY_SHIFTED + KEY_COMMAND:
@@ -2063,4 +2073,3 @@ int ReadControls(d_event *event)
 
 	return 0;
 }
-

@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "gameseq.h"
 #include "args.h"
+#include "vr_openvr.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -867,6 +868,125 @@ void game_render_frame_mono(int flip)
 #endif
 }
 
+static void game_render_frame_eye(fix eye_offset)
+{
+	int no_draw_hud = 0;
+
+	gr_set_current_canvas(&Screen_3d_window);
+
+	if (Guided_missile[Player_num] && Guided_missile[Player_num]->type==OBJ_WEAPON && Guided_missile[Player_num]->id==GUIDEDMISS_ID && Guided_missile[Player_num]->signature==Guided_missile_sig[Player_num] && PlayerCfg.GuidedInBigWindow) {
+		object *viewer_save = Viewer;
+
+		if (PlayerCfg.CurrentCockpitMode==CM_FULL_COCKPIT || PlayerCfg.CurrentCockpitMode==CM_REAR_VIEW)
+		{
+			 BigWindowSwitch=1;
+			 force_cockpit_redraw=1;
+			 PlayerCfg.CurrentCockpitMode=CM_STATUS_BAR;
+			 return;
+		}
+
+		Viewer = Guided_missile[Player_num];
+
+		update_rendered_data(0, Viewer, 0, 0);
+		render_frame(eye_offset, 0);
+
+		wake_up_rendered_objects(Viewer, 0);
+		show_HUD_names();
+
+		Viewer = viewer_save;
+
+		gr_set_curfont( GAME_FONT );
+		gr_set_fontcolor( BM_XRGB(27,0,0), -1 );
+
+		gr_printf(0x8000, FSPACY(1), "Guided Missile View");
+
+		show_reticle(RET_TYPE_CROSS_V1, 0);
+
+		HUD_render_message_frame();
+
+		no_draw_hud=1;
+	}
+	else
+	{
+		if (BigWindowSwitch)
+		{
+			force_cockpit_redraw=1;
+			PlayerCfg.CurrentCockpitMode=(Rear_view?CM_REAR_VIEW:CM_FULL_COCKPIT);
+			BigWindowSwitch=0;
+			return;
+		}
+		update_rendered_data(0, Viewer, Rear_view, 0);
+		render_frame(eye_offset, 0);
+	}
+
+	gr_set_current_canvas(&Screen_3d_window);
+
+	update_cockpits();
+
+	if (Newdemo_state == ND_STATE_PLAYBACK)
+		Game_mode = Newdemo_game_mode;
+
+	if (is_observer() && !can_draw_observer_cockpit()) {
+		// Do not render gauges.
+	} else {
+		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT || PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR)
+			render_gauges();
+	}
+
+	if (Newdemo_state == ND_STATE_PLAYBACK)
+		Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
+
+	gr_set_current_canvas(&Screen_3d_window);
+
+	if (!no_draw_hud)
+		game_draw_hud_stuff();
+
+	gr_set_current_canvas(NULL);
+
+	show_extra_views();		//missile view, buddy bot, etc.
+
+#ifdef NETWORK
+	if (netplayerinfo_on && Game_mode & GM_MULTI)
+		show_netplayerinfo();
+#endif
+}
+
+static void game_render_frame_vr(void)
+{
+	int prev_w = Screen_3d_window.cv_bitmap.bm_w;
+	int prev_h = Screen_3d_window.cv_bitmap.bm_h;
+	int prev_screen_w = grd_curscreen->sc_w;
+	int prev_screen_h = grd_curscreen->sc_h;
+	int vr_w = 0;
+	int vr_h = 0;
+
+	vr_openvr_begin_frame();
+	vr_openvr_render_size(&vr_w, &vr_h);
+	if (vr_w > 0 && vr_h > 0)
+	{
+		Screen_3d_window.cv_bitmap.bm_w = vr_w;
+		Screen_3d_window.cv_bitmap.bm_h = vr_h;
+		Screen_3d_window.cv_bitmap.bm_rowsize = vr_w;
+		grd_curscreen->sc_w = vr_w;
+		grd_curscreen->sc_h = vr_h;
+	}
+
+	for (int eye = 0; eye < 2; eye++)
+	{
+		vr_openvr_bind_eye(eye);
+		game_render_frame_eye(vr_openvr_eye_offset(eye));
+		vr_openvr_unbind_eye();
+	}
+
+	vr_openvr_submit_eyes();
+
+	Screen_3d_window.cv_bitmap.bm_w = prev_w;
+	Screen_3d_window.cv_bitmap.bm_h = prev_h;
+	Screen_3d_window.cv_bitmap.bm_rowsize = prev_w;
+	grd_curscreen->sc_w = prev_screen_w;
+	grd_curscreen->sc_h = prev_screen_h;
+}
+
 void toggle_cockpit()
 {
 	int new_mode=CM_FULL_SCREEN;
@@ -970,7 +1090,10 @@ void game_render_frame()
 {
 	set_screen_mode( SCREEN_GAME );
 	play_homing_warning();
-	game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
+	if (vr_openvr_active())
+		game_render_frame_vr();
+	else
+		game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
 }
 
 //show a message in a nice little box
