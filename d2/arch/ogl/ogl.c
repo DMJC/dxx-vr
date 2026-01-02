@@ -35,6 +35,7 @@
 #include "rle.h"
 #include "console.h"
 #include "u_mem.h"
+#include "vr_openvr.h"
 #ifdef HAVE_LIBPNG
 #include "pngfile.h"
 #endif
@@ -56,6 +57,9 @@
 #include "args.h"
 #include "xmodel.h"
 #include "oglprog.h"
+#include "inferno.h"
+#include "vr_openvr.h"
+#include "screens.h"
 
 //change to 1 for lots of spew.
 #if 0
@@ -1171,7 +1175,19 @@ void ogl_start_frame(void){
 #ifdef OGLES
 	perspective(90.0,1.0,0.1,5000.0);   
 #else
-	gluPerspective(90.0,1.0,0.1,5000.0);
+	{
+		int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		const float near_z = 0.1f;
+		const float far_z = 5000.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		else
+			gluPerspective(90.0,1.0,near_z,far_z);
+	}
 #endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();//clear matrix
@@ -1207,6 +1223,10 @@ void gr_flip(void)
 		ogl_texture_stats();
 
 	ogl_do_palfx();
+#ifdef USE_OPENVR
+	if (vr_openvr_active() && Screen_mode != SCREEN_GAME)
+		vr_openvr_submit_mono_from_screen(Screen_mode != SCREEN_MOVIE);
+#endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 }
