@@ -459,7 +459,7 @@ void vr_openvr_submit_eyes(void)
 #endif
 }
 
-void vr_openvr_submit_mono_from_screen(int curved, int use_front)
+void vr_openvr_submit_mono_from_screen(int curved)
 {
 #ifdef USE_OPENVR
 #ifdef OGL
@@ -478,12 +478,9 @@ void vr_openvr_submit_mono_from_screen(int curved, int use_front)
 	prev_scissor = glIsEnabled(GL_SCISSOR_TEST);
 	glGetIntegerv(GL_SCISSOR_BOX, prev_scissor_box);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	if (use_front)
-		glReadBuffer(GL_FRONT);
-	else
-		glReadBuffer(double_buffer ? GL_BACK : GL_FRONT);
+	glReadBuffer(double_buffer ? GL_BACK : GL_FRONT);
 	glDisable(GL_SCISSOR_TEST);
-	glFinish();
+	glFlush();
 	glBindTexture(GL_TEXTURE_2D, vr_menu_tex);
 	GLint copy_width = (GLint)vr_render_width;
 	GLint copy_height = (GLint)vr_render_height;
