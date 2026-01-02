@@ -169,6 +169,7 @@ void ReadCmdArgs(void)
 	// Graphics Options
 
 	GameArg.GfxHiresFNTAvailable	= !FindArg("-lowresfont");
+	GameArg.GfxVREnabled		= FindArg("-vr");
 
 #ifdef OGL
 	// OpenGL Options
