@@ -287,7 +287,13 @@ void vr_openvr_submit_eyes(void)
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, vr_eye_fbo[0]);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, vr_render_width, vr_render_height, 0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	GLint blit_width = (GLint)vr_render_width;
+	GLint blit_height = (GLint)vr_render_height;
+	if (blit_width > grd_curscreen->sc_w)
+		blit_width = grd_curscreen->sc_w;
+	if (blit_height > grd_curscreen->sc_h)
+		blit_height = grd_curscreen->sc_h;
+	glBlitFramebuffer(0, 0, blit_width, blit_height, 0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 #endif
 #endif
@@ -301,8 +307,22 @@ void vr_openvr_submit_mono_from_screen(void)
 		return;
 
 	vr_openvr_begin_frame();
+	GLint prev_framebuffer = 0;
+	GLint prev_read_buffer = GL_BACK;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_framebuffer);
+	glGetIntegerv(GL_READ_BUFFER, &prev_read_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glReadBuffer(GL_BACK);
 	glBindTexture(GL_TEXTURE_2D, vr_menu_tex);
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, vr_render_width, vr_render_height);
+	GLint copy_width = (GLint)vr_render_width;
+	GLint copy_height = (GLint)vr_render_height;
+	if (copy_width > grd_curscreen->sc_w)
+		copy_width = grd_curscreen->sc_w;
+	if (copy_height > grd_curscreen->sc_h)
+		copy_height = grd_curscreen->sc_h;
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, copy_width, copy_height);
+	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_framebuffer);
+	glReadBuffer(prev_read_buffer);
 
 	for (int eye = 0; eye < 2; eye++)
 	{
