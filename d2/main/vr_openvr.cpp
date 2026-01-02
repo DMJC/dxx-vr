@@ -10,7 +10,9 @@
 
 #include "args.h"
 #include "config.h"
+extern "C" {
 #include "console.h"
+}
 #include "inferno.h"
 #include "gr.h"
 

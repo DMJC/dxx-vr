@@ -2,6 +2,7 @@
 #define VR_OPENVR_H
 
 #include "pstypes.h"
+#include "fix.h"
 
 #ifdef __cplusplus
 extern "C" {

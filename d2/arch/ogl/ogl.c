@@ -58,6 +58,7 @@
 #include "oglprog.h"
 #include "inferno.h"
 #include "vr_openvr.h"
+#include "screens.h"
 
 //change to 1 for lots of spew.
 #if 0
