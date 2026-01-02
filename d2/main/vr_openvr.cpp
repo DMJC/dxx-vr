@@ -129,9 +129,13 @@ static void vr_openvr_draw_curved_quad(GLuint texture)
 	const float radius = 2.0f;
 	const float curve = 0.7f;
 	const float height = 1.4f;
+	const GLboolean prev_blend = glIsEnabled(GL_BLEND);
+	const GLboolean prev_alpha = glIsEnabled(GL_ALPHA_TEST);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 	glUseProgram(0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -168,6 +172,10 @@ static void vr_openvr_draw_curved_quad(GLuint texture)
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
+	if (prev_blend)
+		glEnable(GL_BLEND);
+	if (prev_alpha)
+		glEnable(GL_ALPHA_TEST);
 }
 
 static void vr_openvr_draw_flat_quad(GLuint texture)
@@ -175,9 +183,13 @@ static void vr_openvr_draw_flat_quad(GLuint texture)
 	const float width = 2.0f;
 	const float height = 1.2f;
 	const float depth = -2.0f;
+	const GLboolean prev_blend = glIsEnabled(GL_BLEND);
+	const GLboolean prev_alpha = glIsEnabled(GL_ALPHA_TEST);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 	glUseProgram(0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -209,6 +221,10 @@ static void vr_openvr_draw_flat_quad(GLuint texture)
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
+	if (prev_blend)
+		glEnable(GL_BLEND);
+	if (prev_alpha)
+		glEnable(GL_ALPHA_TEST);
 }
 
 #endif
