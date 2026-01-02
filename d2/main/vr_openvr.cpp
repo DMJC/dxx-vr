@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+extern "C" {
 #include "args.h"
 #include "config.h"
 #include "console.h"
@@ -18,6 +19,7 @@
 #include "pngfile.h"
 #include "timer.h"
 #include "u_mem.h"
+}
 
 #ifdef OGL
 #include <GL/glew.h>
