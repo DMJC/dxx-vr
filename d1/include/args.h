@@ -60,6 +60,7 @@ typedef struct Arg
 	int SndNoMusic;
 	int SndDisableSdlMixer;
 	int GfxHiresFNTAvailable;
+	int GfxVREnabled;
 #ifdef OGL
 	int OglFixedFont;
 #endif

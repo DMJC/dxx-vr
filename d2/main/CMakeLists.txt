@@ -67,6 +67,7 @@ add_executable (d2x-redux
     vclip.c
     wall.c
     weapon.c
+    vr_openvr.cpp
     )
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include)
@@ -171,6 +172,15 @@ if(OPENGL)
     find_package(OpenGL REQUIRED)
     find_package(GLEW REQUIRED)
     list(APPEND EXTRA_LIBRARIES GLEW::GLEW)
+endif()
+if(OPENVR)
+    find_path(OPENVR_INCLUDE_DIR openvr.h PATH_SUFFIXES openvr)
+    find_library(OPENVR_LIBRARY openvr_api)
+    if(NOT OPENVR_INCLUDE_DIR OR NOT OPENVR_LIBRARY)
+        message(FATAL_ERROR "OpenVR not found. Set OPENVR_INCLUDE_DIR and OPENVR_LIBRARY.")
+    endif()
+    target_include_directories(d2x-redux PRIVATE ${OPENVR_INCLUDE_DIR})
+    list(APPEND EXTRA_LIBRARIES ${OPENVR_LIBRARY})
 endif()
 if(PNG)
     find_package(PNG REQUIRED)
