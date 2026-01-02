@@ -108,7 +108,7 @@ static void vr_openvr_init_render_targets(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, vr_render_width, vr_render_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, vr_render_width, vr_render_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	vr_gl_ready = true;
 }
@@ -549,7 +549,7 @@ void vr_openvr_submit_mono_from_screen(int curved, int use_front)
 		copy_width = grd_curscreen->sc_w;
 	if (copy_height > grd_curscreen->sc_h)
 		copy_height = grd_curscreen->sc_h;
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, copy_width, copy_height);
+	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, copy_width, copy_height, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_framebuffer);
 	glReadBuffer(prev_read_buffer);
 	if (prev_scissor)
