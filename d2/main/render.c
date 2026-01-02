@@ -1680,6 +1680,8 @@ void render_frame(fix eye_offset, int window_num)
 			vm_vec_add2(&Viewer_eye, &head_world);
 			base_orient = combined;
 		}
+		if (Viewer == get_player_view_object())
+			Viewer->orient = base_orient;
 	}
 
 #ifdef JOHN_ZOOM
