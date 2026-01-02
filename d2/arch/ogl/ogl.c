@@ -1212,7 +1212,7 @@ void gr_flip(void)
 	ogl_do_palfx();
 #ifdef USE_OPENVR
 	if (vr_openvr_active() && Screen_mode != SCREEN_GAME)
-		vr_openvr_submit_mono_from_screen();
+		vr_openvr_submit_mono_from_screen(Screen_mode != SCREEN_MOVIE);
 #endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);

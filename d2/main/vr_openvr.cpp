@@ -145,6 +145,38 @@ static void vr_openvr_draw_curved_quad(GLuint texture)
 	glDisable(GL_TEXTURE_2D);
 }
 
+static void vr_openvr_draw_flat_quad(GLuint texture)
+{
+	const float width = 2.0f;
+	const float height = 1.2f;
+	const float depth = -2.0f;
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glUseProgram(0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-1.0, 1.0, -0.75, 0.75, 0.5, 10.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glEnable(GL_TEXTURE_2D);
+
+	glBegin(GL_TRIANGLE_STRIP);
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(-width * 0.5f, -height * 0.5f, depth);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-width * 0.5f, height * 0.5f, depth);
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f(width * 0.5f, -height * 0.5f, depth);
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f(width * 0.5f, height * 0.5f, depth);
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
 #endif
 
 void vr_openvr_init(void)
@@ -326,7 +358,7 @@ void vr_openvr_submit_eyes(void)
 #endif
 }
 
-void vr_openvr_submit_mono_from_screen(void)
+void vr_openvr_submit_mono_from_screen(int curved)
 {
 #ifdef USE_OPENVR
 #ifdef OGL
@@ -356,7 +388,10 @@ void vr_openvr_submit_mono_from_screen(void)
 		glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
 		glViewport(0, 0, vr_render_width, vr_render_height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		vr_openvr_draw_curved_quad(vr_menu_tex);
+		if (curved)
+			vr_openvr_draw_curved_quad(vr_menu_tex);
+		else
+			vr_openvr_draw_flat_quad(vr_menu_tex);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
