@@ -7,6 +7,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "args.h"
 #include "config.h"
@@ -14,6 +15,9 @@
 #include "inferno.h"
 #include "gr.h"
 #include "maths.h"
+#include "pngfile.h"
+#include "timer.h"
+#include "u_mem.h"
 
 #ifdef OGL
 #include <GL/glew.h>
@@ -39,6 +43,61 @@ static int vr_current_eye = -1;
 static bool vr_has_pose = false;
 static vms_matrix vr_head_orient = vmd_identity_matrix;
 static vms_vector vr_head_pos = {0, 0, 0};
+
+static void vr_openvr_dump_menu_texture(void)
+{
+#ifdef HAVE_LIBPNG
+	static fix64 last_dump_time = 0;
+	static int dump_index = 0;
+
+	fix64 now = timer_query();
+	if (now < last_dump_time + (F1_0 * 5))
+		return;
+
+	last_dump_time = now;
+	if (!vr_menu_tex || vr_render_width == 0 || vr_render_height == 0)
+		return;
+
+	size_t rgba_size = (size_t)vr_render_width * vr_render_height * 4;
+	size_t rgb_size = (size_t)vr_render_width * vr_render_height * 3;
+	ubyte *rgba = (ubyte *)d_malloc(rgba_size);
+	ubyte *rgb = (ubyte *)d_malloc(rgb_size);
+	if (!rgba || !rgb)
+	{
+		d_free(rgba);
+		d_free(rgb);
+		return;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, vr_menu_tex);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+
+	for (uint32_t y = 0; y < vr_render_height; y++)
+	{
+		size_t dst_row = (size_t)y * vr_render_width * 3;
+		size_t src_row = (size_t)(vr_render_height - 1 - y) * vr_render_width * 4;
+		for (uint32_t x = 0; x < vr_render_width; x++)
+		{
+			rgb[dst_row + x * 3 + 0] = rgba[src_row + x * 4 + 0];
+			rgb[dst_row + x * 3 + 1] = rgba[src_row + x * 4 + 1];
+			rgb[dst_row + x * 3 + 2] = rgba[src_row + x * 4 + 2];
+		}
+	}
+
+	png_data pdata;
+	char filename[64];
+	memset(&pdata, 0, sizeof(pdata));
+	pdata.width = (int)vr_render_width;
+	pdata.height = (int)vr_render_height;
+	pdata.data = rgb;
+	pdata.depth = 8;
+	snprintf(filename, sizeof(filename), "vr_menu_dump_%04d.png", dump_index++);
+	write_png(filename, &pdata);
+
+	d_free(rgba);
+	d_free(rgb);
+#endif
+}
 
 static void vr_openvr_release_gl(void)
 {
@@ -550,6 +609,7 @@ void vr_openvr_submit_mono_from_screen(int curved, int use_front)
 	if (copy_height > grd_curscreen->sc_h)
 		copy_height = grd_curscreen->sc_h;
 	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, copy_width, copy_height, 0);
+	vr_openvr_dump_menu_texture();
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_framebuffer);
 	glReadBuffer(prev_read_buffer);
 	if (prev_scissor)
