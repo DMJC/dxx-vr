@@ -89,8 +89,12 @@ static void vr_openvr_dump_menu_texture(void)
 
 	png_data pdata;
 	char filename[64 + sizeof(SCRNS_DIR)];
-	if (!PHYSFSX_exists(SCRNS_DIR, 0))
-		PHYSFS_mkdir(SCRNS_DIR);
+	const char *dump_dir = "screenshots";
+	if (!PHYSFSX_exists(dump_dir, 0))
+	{
+		if (!PHYSFS_mkdir(dump_dir))
+			con_printf(CON_URGENT, "PHYSFS: could not create '%s': %s\n", dump_dir, PHYSFS_getLastError());
+	}
 	memset(&pdata, 0, sizeof(pdata));
 	pdata.width = (int)vr_render_width;
 	pdata.height = (int)vr_render_height;
@@ -98,7 +102,11 @@ static void vr_openvr_dump_menu_texture(void)
 	pdata.depth = 8;
 	snprintf(filename, sizeof(filename), "%svr_menu_dump_%04d.png", SCRNS_DIR, dump_index++);
 	if (!write_png(filename, &pdata))
-		con_printf(CON_URGENT, "Could not create VR menu PNG '%s'\n", filename);
+	{
+		const char *write_dir = PHYSFS_getWriteDir();
+		con_printf(CON_URGENT, "Could not create VR menu PNG '%s' (write dir: %s): %s\n",
+			filename, write_dir ? write_dir : "(null)", PHYSFS_getLastError());
+	}
 
 	d_free(rgba);
 	d_free(rgb);
