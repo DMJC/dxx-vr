@@ -88,7 +88,11 @@ if(OPENGL)
 endif()
 
 if(SDLMIXER)
-    target_link_libraries(d2x-redux PUBLIC ${SDL2_MIXER_LIBRARIES})
+    if(SDL2_MIXER_TARGET)
+        target_link_libraries(d2x-redux PUBLIC ${SDL2_MIXER_TARGET})
+    elseif(SDL2_MIXER_LIBRARIES)
+        target_link_libraries(d2x-redux PUBLIC ${SDL2_MIXER_LIBRARIES})
+    endif()
 endif()
 
 if(EDITOR)
