@@ -56,6 +56,9 @@
 #include "args.h"
 #include "xmodel.h"
 #include "oglprog.h"
+#include "inferno.h"
+#include "vr_openvr.h"
+#include "screens.h"
 
 //change to 1 for lots of spew.
 #if 0
@@ -1207,6 +1210,10 @@ void gr_flip(void)
 		ogl_texture_stats();
 
 	ogl_do_palfx();
+#ifdef USE_OPENVR
+	if (vr_openvr_active() && Screen_mode != SCREEN_GAME)
+		vr_openvr_submit_mono_from_screen();
+#endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 }

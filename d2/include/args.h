@@ -61,6 +61,7 @@ typedef struct Arg
 	int GfxMovieHires;
 	int GfxHiresGFXAvailable;
 	int GfxHiresFNTAvailable;
+	int GfxVREnabled;
 #ifdef OGL
 	int OglFixedFont;
 #endif

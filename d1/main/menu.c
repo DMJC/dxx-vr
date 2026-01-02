@@ -1226,7 +1226,7 @@ void reticle_config()
 	PlayerCfg.ReticleSize = m[opt_ret_size].value;
 }
 
-int opt_gr_texfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit;
+int opt_gr_texfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit, opt_gr_vr;
 int opt_gr_classicdepth;
 int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 {
@@ -1268,10 +1268,10 @@ int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 void graphics_config()
 {
 #ifdef OGL
-	newmenu_item m[17];
+	newmenu_item m[18];
 	int i = 0;
 #else
-	newmenu_item m[6];
+	newmenu_item m[7];
 #endif
 	int nitems = 0;
 
@@ -1305,6 +1305,8 @@ void graphics_config()
 
 	opt_gr_disablecockpit = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="Disable Cockpit View"; m[nitems].value = PlayerCfg.DisableCockpit; nitems++;
+	opt_gr_vr = nitems;
+	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="Virtual Reality (OpenVR)"; m[nitems].value = GameCfg.VREnabled; nitems++;
 #ifdef OGL
 	m[opt_gr_texfilt+GameCfg.TexFilt].value=1;
 #endif
@@ -1333,6 +1335,7 @@ void graphics_config()
 	GameCfg.GammaLevel = m[opt_gr_brightness].value;
 	GameCfg.FPSIndicator = m[opt_gr_fpsindi].value;
 	PlayerCfg.DisableCockpit = m[opt_gr_disablecockpit].value; 
+	GameCfg.VREnabled = m[opt_gr_vr].value;
 
 
 	PlayerCfg.maxFps=atoi(framerate_string);
