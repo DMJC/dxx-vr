@@ -263,13 +263,13 @@ void vr_openvr_begin_frame(void)
 	{
 		const vr::HmdMatrix34_t &mat = poses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking;
 		vr_head_orient.rvec.x = fl2f(mat.m[0][0]);
-		vr_head_orient.rvec.y = fl2f(mat.m[1][0]);
-		vr_head_orient.rvec.z = -fl2f(mat.m[2][0]);
-		vr_head_orient.uvec.x = fl2f(mat.m[0][1]);
+		vr_head_orient.rvec.y = fl2f(mat.m[0][1]);
+		vr_head_orient.rvec.z = -fl2f(mat.m[0][2]);
+		vr_head_orient.uvec.x = fl2f(mat.m[1][0]);
 		vr_head_orient.uvec.y = fl2f(mat.m[1][1]);
-		vr_head_orient.uvec.z = -fl2f(mat.m[2][1]);
-		vr_head_orient.fvec.x = fl2f(mat.m[0][2]);
-		vr_head_orient.fvec.y = fl2f(mat.m[1][2]);
+		vr_head_orient.uvec.z = -fl2f(mat.m[1][2]);
+		vr_head_orient.fvec.x = fl2f(mat.m[2][0]);
+		vr_head_orient.fvec.y = fl2f(mat.m[2][1]);
 		vr_head_orient.fvec.z = -fl2f(mat.m[2][2]);
 		vr_head_pos.x = fl2f(mat.m[0][3]);
 		vr_head_pos.y = fl2f(mat.m[1][3]);
