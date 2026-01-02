@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "effects.h"
 #include "playsave.h"
+#include "vr_openvr.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -1645,13 +1646,14 @@ void render_frame(fix eye_offset, int window_num)
 	if (start_seg_num==-1)
 		start_seg_num = Viewer->segnum;
 
+	vms_matrix base_orient = Viewer->orient;
 	if (Rear_view && (Viewer==get_player_view_object())) {
 		vms_matrix headm,viewm;
 		Player_head_angles.p = Player_head_angles.b = 0;
 		Player_head_angles.h = 0x7fff;
 		vm_angles_2_matrix(&headm,&Player_head_angles);
 		vm_matrix_x_matrix(&viewm,&Viewer->orient,&headm);
-		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
+		base_orient = viewm;
 	} else	{
 #ifdef JOHN_ZOOM
 		if (keyd_pressed[KEY_RSHIFT] )	{
@@ -1661,11 +1663,30 @@ void render_frame(fix eye_offset, int window_num)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,fixdiv(Render_zoom,Zoom_factor));
 #else
-		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,Render_zoom);
 #endif
 	}
+
+	if (vr_openvr_active())
+	{
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
+		{
+			vms_matrix combined;
+			vms_vector head_world;
+			vm_matrix_x_matrix(&combined, &base_orient, &head_orient);
+			vm_vec_rotate(&head_world, &head_pos, &base_orient);
+			vm_vec_add2(&Viewer_eye, &head_world);
+			base_orient = combined;
+		}
+	}
+
+#ifdef JOHN_ZOOM
+	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
+#else
+	g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
+#endif
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
