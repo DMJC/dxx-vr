@@ -6,8 +6,6 @@
  *
  */
 
-#include <stddef.h>
-
 #include "rbaudio.h"
 
 void RBAExit(void)
