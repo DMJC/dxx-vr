@@ -5,6 +5,10 @@
 
 #include "pstypes.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Priority levels */
 #define CON_CRITICAL -3
 #define CON_URGENT   -2
@@ -34,5 +38,8 @@ void con_printf(int level, const char *fmt, ...);
 void con_showup(void);
 void con_switch_log(const char* filename);
 
-#endif /* _CONSOLE_H_ */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* _CONSOLE_H_ */
