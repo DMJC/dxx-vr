@@ -33,6 +33,7 @@ static uint32_t vr_render_width = 0;
 static uint32_t vr_render_height = 0;
 static GLint vr_prev_fbo = 0;
 static GLint vr_prev_viewport[4] = {0, 0, 0, 0};
+static float vr_eye_offset_adjust_m = 0.0f;
 
 static void vr_openvr_release_gl(void)
 {
@@ -269,10 +270,20 @@ fix vr_openvr_eye_offset(int eye)
 	if (error != vr::TrackedProp_Success || ipd_m <= 0.0f)
 		ipd_m = 0.064f;
 	float offset_m = (eye == 0) ? -ipd_m * 0.5f : ipd_m * 0.5f;
+	offset_m += (eye == 0) ? vr_eye_offset_adjust_m : -vr_eye_offset_adjust_m;
 	return fl2f(offset_m);
 #else
 	(void)eye;
 	return 0;
+#endif
+}
+
+void vr_openvr_adjust_eye_offset(float delta_meters)
+{
+#ifdef USE_OPENVR
+	vr_eye_offset_adjust_m += delta_meters;
+#else
+	(void)delta_meters;
 #endif
 }
 
