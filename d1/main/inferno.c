@@ -125,6 +125,7 @@ void print_commandline_help()
 
 	printf( "\n Graphics:\n\n");
 	printf( "  -lowresfont                   Force to use LowRes fonts\n");
+	printf( "  -vr                           Enable Virtual Reality mode\n");
 #ifdef    OGL
 	printf( "  -gl_fixedfont                 Do not scale fonts to current resolution\n");
 #endif // OGL
@@ -387,6 +388,8 @@ int main(int argc, char *argv[])
 		con_printf(CON_VERBOSE,"%s%s", TXT_VERBOSE_1, "\n");
 	
 	ReadConfigFile();
+	if (GameArg.GfxVREnabled)
+		GameCfg.VREnabled = 1;
 
 	PHYSFSX_addArchiveContent();
 
