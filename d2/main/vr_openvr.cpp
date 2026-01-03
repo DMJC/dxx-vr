@@ -112,24 +112,60 @@ static void vr_openvr_init_render_targets(void)
 	vr_gl_ready = true;
 }
 
-static void vr_openvr_draw_curved_quad(GLuint texture)
+static void vr_openvr_apply_eye_modelview(int eye)
+{
+	if (eye < 0)
+	con_printf(CON_NORMAL, "Eye Model not Applied\n");
+		return;
+
+	const float eye_offset = f2fl(vr_openvr_eye_offset(eye));
+	con_printf(CON_NORMAL, "Eye offset %f\n", eye_offset);
+	glTranslatef(eye_offset, 0.0f, 0.0f);
+}
+
+static void vr_openvr_draw_curved_quad(GLuint texture, int eye)
 {
 	const int segments = 32;
-	const float radius = 2.0f;
-	const float curve = 0.7f;
-	const float height = 1.4f;
+	const float radius = 8.0f;
+	const float curve = 1.0f;
+	const float height = 5.0f;
+	const GLboolean prev_blend = glIsEnabled(GL_BLEND);
+	const GLboolean prev_alpha = glIsEnabled(GL_ALPHA_TEST);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 	glUseProgram(0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -0.75, 0.75, 0.5, 10.0);
+	{
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		const float near_z = 0.5f;
+		const float far_z = 10.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		else
+			glFrustum(-1.0, 1.0, -0.75, 0.75, near_z, far_z);
+	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	vr_openvr_apply_eye_modelview(eye);
 
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glEnable(GL_TEXTURE_2D);
+	if (texture)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glEnable(GL_TEXTURE_2D);
+	}
+	else
+	{
+		glDisable(GL_TEXTURE_2D);
+	}
+		glDisable(GL_TEXTURE_2D);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glBegin(GL_TRIANGLE_STRIP);
 	for (int i = 0; i <= segments; i++)
@@ -148,25 +184,54 @@ static void vr_openvr_draw_curved_quad(GLuint texture)
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
+	if (prev_blend)
+		glEnable(GL_BLEND);
+	if (prev_alpha)
+		glEnable(GL_ALPHA_TEST);
 }
 
-static void vr_openvr_draw_flat_quad(GLuint texture)
+static void vr_openvr_draw_flat_quad(GLuint texture, int eye)
 {
 	const float width = 2.0f;
 	const float height = 1.2f;
 	const float depth = -2.0f;
+	const GLboolean prev_blend = glIsEnabled(GL_BLEND);
+	const GLboolean prev_alpha = glIsEnabled(GL_ALPHA_TEST);
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
 	glUseProgram(0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -0.75, 0.75, 0.5, 10.0);
+	{
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		const float near_z = 0.5f;
+		const float far_z = 10.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		else
+			glFrustum(-1.0, 1.0, -0.75, 0.75, near_z, far_z);
+	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	vr_openvr_apply_eye_modelview(eye);
 
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glEnable(GL_TEXTURE_2D);
+	if (texture)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glEnable(GL_TEXTURE_2D);
+	}
+	else
+	{
+		glDisable(GL_TEXTURE_2D);
+	}
+		glDisable(GL_TEXTURE_2D);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glBegin(GL_TRIANGLE_STRIP);
 	glTexCoord2f(0.0f, 1.0f);
@@ -180,6 +245,10 @@ static void vr_openvr_draw_flat_quad(GLuint texture)
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
+	if (prev_blend)
+		glEnable(GL_BLEND);
+	if (prev_alpha)
+		glEnable(GL_ALPHA_TEST);
 }
 
 #endif
@@ -271,9 +340,9 @@ void vr_openvr_begin_frame(void)
 		vr_head_orient.fvec.x = fl2f(mat.m[2][0]);
 		vr_head_orient.fvec.y = fl2f(mat.m[2][1]);
 		vr_head_orient.fvec.z = -fl2f(mat.m[2][2]);
-		vr_head_pos.x = fl2f(mat.m[0][3]);
-		vr_head_pos.y = fl2f(mat.m[1][3]);
-		vr_head_pos.z = -fl2f(mat.m[2][3]);
+		vr_head_pos.x = -fl2f(mat.m[0][3]);
+		vr_head_pos.y = -fl2f(mat.m[1][3]);
+		vr_head_pos.z = fl2f(mat.m[2][3]);
 		vr_has_pose = true;
 	}
 	else
@@ -503,9 +572,9 @@ void vr_openvr_submit_mono_from_screen(int curved)
 		glViewport(0, 0, vr_render_width, vr_render_height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (curved)
-			vr_openvr_draw_curved_quad(vr_menu_tex);
+			vr_openvr_draw_curved_quad(vr_menu_tex, eye);
 		else
-			vr_openvr_draw_flat_quad(vr_menu_tex);
+			vr_openvr_draw_flat_quad(vr_menu_tex, eye);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
