@@ -327,6 +327,8 @@ int set_screen_mode(int sm)
 	}
 
 	gr_set_current_canvas(NULL);
+	if (Screen_mode == SCREEN_MENU)
+		grd_curscreen->sc_mode = Game_screen_mode;
 
 	return 1;
 }
