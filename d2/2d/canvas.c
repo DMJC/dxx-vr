@@ -101,6 +101,8 @@ void gr_free_sub_canvas(grs_canvas *canv)
 
 void gr_set_current_canvas( grs_canvas *canv )
 {
+	if (canv && canv->cv_bitmap.bm_type == BM_OGL && Screen_mode == SCREEN_MENU && vr_openvr_active())
+		vr_openvr_bind_menu();
 	if (canv==NULL)
 		grd_curcanv = &(grd_curscreen->sc_canvas);
 	else
