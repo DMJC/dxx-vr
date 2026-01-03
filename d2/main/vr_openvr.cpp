@@ -164,7 +164,6 @@ static void vr_openvr_draw_curved_quad(GLuint texture, float tex_u_max, float te
 	{
 		glDisable(GL_TEXTURE_2D);
 	}
-		glDisable(GL_TEXTURE_2D);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glBegin(GL_TRIANGLE_STRIP);
@@ -177,9 +176,9 @@ static void vr_openvr_draw_curved_quad(GLuint texture, float tex_u_max, float te
 		float u = t * tex_u_max;
 
 		glTexCoord2f(u, tex_v_max);
-		glVertex3f(x, -height * 0.5f, z);
-		glTexCoord2f(u, 0.0f);
 		glVertex3f(x, height * 0.5f, z);
+		glTexCoord2f(u, 0.0f);
+		glVertex3f(x, -height * 0.5f, z);
 	}
 	glEnd();
 
