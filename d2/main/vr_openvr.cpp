@@ -29,6 +29,8 @@ static GLuint vr_eye_fbo[2] = {0, 0};
 static GLuint vr_eye_color[2] = {0, 0};
 static GLuint vr_eye_depth[2] = {0, 0};
 static GLuint vr_menu_tex = 0;
+static GLuint vr_menu_fbo = 0;
+static GLuint vr_menu_depth = 0;
 static uint32_t vr_render_width = 0;
 static uint32_t vr_render_height = 0;
 static GLint vr_prev_fbo = 0;
@@ -47,11 +49,15 @@ static void vr_openvr_release_gl(void)
 	glDeleteFramebuffers(2, vr_eye_fbo);
 	glDeleteTextures(2, vr_eye_color);
 	glDeleteRenderbuffers(2, vr_eye_depth);
+	glDeleteFramebuffers(1, &vr_menu_fbo);
+	glDeleteRenderbuffers(1, &vr_menu_depth);
 	glDeleteTextures(1, &vr_menu_tex);
 
 	vr_eye_fbo[0] = vr_eye_fbo[1] = 0;
 	vr_eye_color[0] = vr_eye_color[1] = 0;
 	vr_eye_depth[0] = vr_eye_depth[1] = 0;
+	vr_menu_fbo = 0;
+	vr_menu_depth = 0;
 	vr_menu_tex = 0;
 	vr_gl_ready = false;
 }
@@ -109,13 +115,32 @@ static void vr_openvr_init_render_targets(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, vr_render_width, vr_render_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
+	glGenRenderbuffers(1, &vr_menu_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, vr_menu_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, vr_render_width, vr_render_height);
+
+	glGenFramebuffers(1, &vr_menu_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, vr_menu_fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, vr_menu_tex, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, vr_menu_depth);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		con_printf(CON_NORMAL, "OpenVR menu framebuffer incomplete.\n");
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		vr_openvr_release_gl();
+		GameCfg.VREnabled = 0;
+		return;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	vr_gl_ready = true;
 }
 
 static void vr_openvr_apply_eye_modelview(int eye)
 {
 	if (eye < 0)
-	con_printf(CON_NORMAL, "Eye Model not Applied\n");
 		return;
 
 	const float eye_offset = f2fl(vr_openvr_eye_offset(eye));
@@ -501,6 +526,32 @@ void vr_openvr_unbind_eye(void)
 #endif
 }
 
+void vr_openvr_bind_menu(void)
+{
+#ifdef USE_OPENVR
+#ifdef OGL
+	if (!vr_openvr_active() || !vr_gl_ready)
+		return;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &vr_prev_fbo);
+	glGetIntegerv(GL_VIEWPORT, vr_prev_viewport);
+	glBindFramebuffer(GL_FRAMEBUFFER, vr_menu_fbo);
+	glViewport(0, 0, vr_render_width, vr_render_height);
+#endif
+#endif
+}
+
+void vr_openvr_unbind_menu(void)
+{
+#ifdef USE_OPENVR
+#ifdef OGL
+	if (!vr_openvr_active() || !vr_gl_ready)
+		return;
+	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)vr_prev_fbo);
+	glViewport(vr_prev_viewport[0], vr_prev_viewport[1], vr_prev_viewport[2], vr_prev_viewport[3]);
+#endif
+#endif
+}
+
 void vr_openvr_submit_eyes(void)
 {
 #ifdef USE_OPENVR
@@ -599,6 +650,31 @@ void vr_openvr_submit_mono_from_texture(unsigned int texture, float u, float v, 
 			vr_openvr_draw_curved_quad(texture, u, v, eye);
 		else
 			vr_openvr_draw_flat_quad(texture, u, v, eye);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	vr_openvr_submit_eyes();
+#endif
+#endif
+}
+
+void vr_openvr_submit_menu(int curved)
+{
+#ifdef USE_OPENVR
+#ifdef OGL
+	if (!vr_openvr_active() || !vr_gl_ready || !vr_compositor)
+		return;
+
+	vr_openvr_begin_frame();
+	for (int eye = 0; eye < 2; eye++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
+		glViewport(0, 0, vr_render_width, vr_render_height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (curved)
+			vr_openvr_draw_curved_quad(vr_menu_tex, 1.0f, 1.0f, eye);
+		else
+			vr_openvr_draw_flat_quad(vr_menu_tex, 1.0f, 1.0f, eye);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
