@@ -75,6 +75,9 @@ int Max_linear_depth = 50; // Deepest segment at which linear interpolation will
 int Max_linear_depth_objects = 20;
 int Simple_model_threshhold_scale = 50; // switch to simpler model when the object has depth greater than this value times its radius.
 int Max_debris_objects = 15; // How many debris objects to create
+static vms_matrix vr_last_head_orient;
+static int vr_head_turn_initialized = 0;
+static int vr_head_turn_enabled_prev = 0;
 
 //used for checking if points have been rotated
 int	Clear_window_color=-1;
@@ -1673,13 +1676,49 @@ void render_frame(fix eye_offset, int window_num)
 		vms_vector head_pos;
 		if (vr_openvr_head_pose(&head_orient, &head_pos))
 		{
-			vms_matrix combined;
+			vms_matrix delta_orient = vmd_identity_matrix;
 			vms_vector head_world;
-			vm_matrix_x_matrix(&combined, &base_orient, &head_orient);
-			vm_vec_rotate(&head_world, &head_pos, &base_orient);
+			vms_matrix ship_orient = base_orient;
+			if (GameCfg.VRHeadTurnsShip && Viewer == get_player_view_object())
+			{
+				if (!vr_head_turn_initialized)
+				{
+					vr_last_head_orient = head_orient;
+					vr_head_turn_initialized = 1;
+				}
+				else
+				{
+					vms_matrix last_transpose;
+					vm_copy_transpose_matrix(&last_transpose, &vr_last_head_orient);
+					vm_matrix_x_matrix(&delta_orient, &head_orient, &last_transpose);
+				}
+				vr_last_head_orient = head_orient;
+				vm_matrix_x_matrix(&ship_orient, &ship_orient, &delta_orient);
+				Viewer->orient = ship_orient;
+				vr_head_turn_enabled_prev = 1;
+			}
+			else
+			{
+				vr_head_turn_initialized = 0;
+				vr_last_head_orient = vmd_identity_matrix;
+				vr_head_turn_enabled_prev = 0;
+			}
+			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
 			vm_vec_add2(&Viewer_eye, &head_world);
-			base_orient = combined;
+			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
 		}
+		else
+		{
+			vr_head_turn_initialized = 0;
+			vr_last_head_orient = vmd_identity_matrix;
+			vr_head_turn_enabled_prev = 0;
+		}
+	}
+	else
+	{
+		vr_head_turn_initialized = 0;
+		vr_last_head_orient = vmd_identity_matrix;
+		vr_head_turn_enabled_prev = 0;
 	}
 
 #ifdef JOHN_ZOOM
