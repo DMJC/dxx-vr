@@ -53,6 +53,7 @@ typedef struct Cfg
 	int ClassicDepth;
 	int BorderlessWindow;
 	int VREnabled;
+	int VRHeadTurnsShip;
 } __pack__ Cfg;
 
 extern struct Cfg GameCfg;
