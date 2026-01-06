@@ -954,6 +954,8 @@ static void game_render_frame_eye(fix eye_offset)
 
 static void game_render_frame_vr(void)
 {
+	game_render_frame_eye(vr_openvr_eye_offset(vr_openvr_current_eye()));
+#if 0
 	int prev_w = Screen_3d_window.cv_bitmap.bm_w;
 	int prev_h = Screen_3d_window.cv_bitmap.bm_h;
 	int prev_screen_w = grd_curscreen->sc_w;
@@ -986,6 +988,7 @@ static void game_render_frame_vr(void)
 	Screen_3d_window.cv_bitmap.bm_rowsize = prev_w;
 	grd_curscreen->sc_w = prev_screen_w;
 	grd_curscreen->sc_h = prev_screen_h;
+#endif
 }
 
 void toggle_cockpit()

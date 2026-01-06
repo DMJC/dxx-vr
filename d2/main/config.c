@@ -261,6 +261,7 @@ int ReadConfigFile()
 int WriteConfigFile()
 {
 	PHYSFS_file *infile;
+	extern int sdl_window_width, sdl_window_height;
 
 	GameCfg.GammaLevel = gr_palette_get_gamma();
 
@@ -287,8 +288,8 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%d\n", GammaLevelStr, GameCfg.GammaLevel);
 	PHYSFSX_printf(infile, "%s=%s\n", LastPlayerStr, Players[Player_num].callsign);
 	PHYSFSX_printf(infile, "%s=%s\n", LastMissionStr, GameCfg.LastMission);
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, SM_W(Game_screen_mode));
-	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, SM_H(Game_screen_mode));
+	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, sdl_window_width); //SM_W(Game_screen_mode));
+	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, sdl_window_height); //SM_H(Game_screen_mode));
 	PHYSFSX_printf(infile, "%s=%i\n", AspectXStr, GameCfg.AspectX);
 	PHYSFSX_printf(infile, "%s=%i\n", AspectYStr, GameCfg.AspectY);
 	PHYSFSX_printf(infile, "%s=%i\n", WindowModeStr, GameCfg.WindowMode);

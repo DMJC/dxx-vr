@@ -15,8 +15,10 @@ extern "C" {
 #include "console.h"
 #include "inferno.h"
 #include "gr.h"
+#include "gamefont.h"
 extern int last_width, last_height;
 const vms_matrix vmd_identity_matrix = IDENTITY_MATRIX;
+extern int sdl_window_width, sdl_window_height;
 }
 
 #ifdef OGL
@@ -319,6 +321,14 @@ void vr_openvr_init_gl(void)
 	if (!vr_initialized)
 		return;
 	vr_openvr_init_render_targets();
+	int vr_w, vr_h;
+	vr_openvr_render_size(&vr_w, &vr_h);
+	grd_curscreen->sc_w = vr_w;
+	grd_curscreen->sc_h = vr_h;
+	gr_set_current_canvas(NULL);
+	grd_curcanv->cv_bitmap.bm_w = vr_w;
+	grd_curcanv->cv_bitmap.bm_h = vr_h;
+	Game_screen_mode = SM(vr_w, vr_h);
 #endif
 #endif
 }
@@ -361,13 +371,13 @@ void vr_openvr_begin_frame(void)
 		const vr::HmdMatrix34_t &mat = poses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking;
 		vr_head_orient.rvec.x = fl2f(mat.m[0][0]);
 		vr_head_orient.rvec.y = fl2f(mat.m[0][1]);
-		vr_head_orient.rvec.z = -fl2f(mat.m[0][2]);
+		vr_head_orient.rvec.z = fl2f(mat.m[0][2]);
 		vr_head_orient.uvec.x = fl2f(mat.m[1][0]);
 		vr_head_orient.uvec.y = fl2f(mat.m[1][1]);
-		vr_head_orient.uvec.z = -fl2f(mat.m[1][2]);
+		vr_head_orient.uvec.z = fl2f(mat.m[1][2]);
 		vr_head_orient.fvec.x = fl2f(mat.m[2][0]);
 		vr_head_orient.fvec.y = fl2f(mat.m[2][1]);
-		vr_head_orient.fvec.z = -fl2f(mat.m[2][2]);
+		vr_head_orient.fvec.z = fl2f(mat.m[2][2]);
 		vr_head_pos.x = fl2f(mat.m[0][3]);
 		vr_head_pos.y = fl2f(mat.m[1][3]);
 		vr_head_pos.z = -fl2f(mat.m[2][3]);
@@ -507,7 +517,10 @@ void vr_openvr_bind_eye(int eye)
 	glGetIntegerv(GL_VIEWPORT, vr_prev_viewport);
 	glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
 	glViewport(0, 0, vr_render_width, vr_render_height);
+	last_width = vr_render_width;
+	last_height = vr_render_height;
 	vr_current_eye = eye;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #else
 	(void)eye;
 #endif
@@ -544,13 +557,16 @@ void vr_openvr_submit_eyes(void)
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, vr_eye_fbo[0]);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	//glViewport(0, 0, sdl_window_width, sdl_window_height);
 	GLint blit_width = (GLint)vr_render_width;
 	GLint blit_height = (GLint)vr_render_height;
-	if (blit_width > grd_curscreen->sc_w)
-		blit_width = grd_curscreen->sc_w;
+	/*
+	if (blit_width > sdl_window_width)
+		blit_width = sdl_window_width;
 	if (blit_height > grd_curscreen->sc_h)
 		blit_height = grd_curscreen->sc_h;
-	glBlitFramebuffer(0, 0, blit_width, blit_height, 0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	*/
+	glBlitFramebuffer(0, 0, blit_width, blit_height, 0, 0, sdl_window_width, sdl_window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 #endif
 #endif
@@ -795,6 +811,11 @@ void vr_openvr_bind_menu_target(void)
 	last_width = (int)vr_render_width;
 	last_height = (int)vr_render_height;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 #endif
 #endif
 }
@@ -841,6 +862,10 @@ void vr_openvr_submit_mono_from_texture(unsigned int texture, float u, float v, 
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
 		glViewport(0, 0, vr_render_width, vr_render_height);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (curved)
 			vr_openvr_draw_curved_quad(texture, u, v, eye);

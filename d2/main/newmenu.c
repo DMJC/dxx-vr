@@ -1484,9 +1484,9 @@ int newmenu_draw(window *wind, newmenu *menu)
 	gr_set_current_canvas(save_canvas);
 #ifdef USE_OPENVR
 #ifdef OGL
-	if (Screen_mode == SCREEN_MENU && vr_openvr_active())
-		vr_openvr_submit_mono_from_screen(1);
-//		vr_openvr_submit_mono_from_frontbuffer(1);
+	//if (Screen_mode == SCREEN_MENU && vr_openvr_active())
+		//vr_openvr_submit_mono_from_screen(1);
+		//vr_openvr_submit_mono_from_frontbuffer(1);
 #endif
 #endif
 	return 1;

@@ -1184,8 +1184,8 @@ void ogl_start_frame(void){
 		float t = 0.0f;
 		const float near_z = 0.1f;
 		const float far_z = 5000.0f;
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		if (1 && eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			glFrustum(l * near_z, r * near_z, t * near_z, b * near_z, near_z, far_z);
 		else
 			gluPerspective(90.0,1.0,near_z,far_z);
 	}
@@ -1225,8 +1225,8 @@ void gr_flip(void)
 
 	ogl_do_palfx();
 #ifdef USE_OPENVR
-	if (vr_openvr_active() && Screen_mode != SCREEN_GAME && (Screen_mode != SCREEN_MOVIE || VR_briefing_active))
-		vr_openvr_submit_mono_from_screen(Screen_mode == SCREEN_MOVIE);
+	//if (vr_openvr_active() && Screen_mode != SCREEN_GAME && (Screen_mode != SCREEN_MOVIE || VR_briefing_active))
+	//	vr_openvr_submit_mono_from_screen(Screen_mode == SCREEN_MOVIE);
 #endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);

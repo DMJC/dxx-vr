@@ -103,6 +103,7 @@ static SDL_GLContext sdl_gl_context = NULL;
 int sdl_video_flags = SDL_OPENGL;
 #endif
 #endif
+int sdl_window_width, sdl_window_height;
 int gr_installed = 0;
 int gl_initialized=0;
 int linedotscale=1; // scalar of glLinewidth and glPointSize - only calculated once when resolution changes
@@ -311,10 +312,29 @@ void ogles_destroy(void)
 }
 #endif
 
+void GLAPIENTRY
+MessageCallback( GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam ) {
+	if (severity == 0x826b || severity == 0x9147) return;
+	char buf[1024];
+	snprintf(buf, sizeof(buf), "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+		type, severity, message );
+	OutputDebugStringA(buf);
+}
+
 int ogl_init_window(int x, int y)
 {
 	int use_x,use_y,use_bpp;
 	Uint32 use_flags;
+
+	if (sdl_gl_context)
+		return 0;
 
 #ifdef OGLES
 	SDL_SysWMinfo info;
@@ -495,7 +515,17 @@ int ogl_init_window(int x, int y)
 		con_printf(CON_DEBUG, "EGL: made context current\n");
 	}
 #endif
+
+	sdl_window_width = use_x;
+	sdl_window_height = use_x;
+
 	glewInit();
+
+#define GL_DEBUG_TYPE_ERROR               0x824C
+#define GL_DEBUG_OUTPUT                   0x92E0
+	glEnable              ( GL_DEBUG_OUTPUT );
+	glDebugMessageCallback( MessageCallback, 0 );
+
 #ifdef OGL_MERGE
 	ogl_init_prog();
 #endif
