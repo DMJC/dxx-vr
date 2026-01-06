@@ -75,7 +75,7 @@ int Max_linear_depth = 50; // Deepest segment at which linear interpolation will
 int Max_linear_depth_objects = 20;
 int Simple_model_threshhold_scale = 50; // switch to simpler model when the object has depth greater than this value times its radius.
 int Max_debris_objects = 15; // How many debris objects to create
-static vms_matrix vr_last_head_orient = vmd_identity_matrix;
+static vms_matrix vr_last_head_orient;
 static int vr_head_turn_initialized = 0;
 static int vr_head_turn_enabled_prev = 0;
 
@@ -1676,48 +1676,48 @@ void render_frame(fix eye_offset, int window_num)
 		vms_vector head_pos;
 		if (vr_openvr_head_pose(&head_orient, &head_pos))
 		{
+			vms_matrix delta_orient = vmd_identity_matrix;
 			vms_vector head_world;
 			vms_matrix ship_orient = base_orient;
-			if (GameCfg.VRHeadTurnsShip && !vr_head_turn_enabled_prev)
-				vr_head_turn_initialized = 0;
-			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
-			vm_vec_add2(&Viewer_eye, &head_world);
 			if (GameCfg.VRHeadTurnsShip && Viewer == get_player_view_object())
 			{
-				vms_matrix delta_orient;
 				if (!vr_head_turn_initialized)
 				{
-					delta_orient = head_orient;
+					vr_last_head_orient = head_orient;
 					vr_head_turn_initialized = 1;
 				}
 				else
 				{
 					vms_matrix last_transpose;
-					vm_transpose_matrix(&last_transpose, &vr_last_head_orient);
+					vm_copy_transpose_matrix(&last_transpose, &vr_last_head_orient);
 					vm_matrix_x_matrix(&delta_orient, &head_orient, &last_transpose);
 				}
 				vr_last_head_orient = head_orient;
-				vm_matrix_x_matrix(&base_orient, &ship_orient, &delta_orient);
-				Viewer->orient = base_orient;
+				vm_matrix_x_matrix(&ship_orient, &ship_orient, &delta_orient);
+				Viewer->orient = ship_orient;
 				vr_head_turn_enabled_prev = 1;
 			}
 			else
 			{
-				vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
-				vr_last_head_orient = head_orient;
-				vr_head_turn_initialized = 1;
+				vr_head_turn_initialized = 0;
+				vr_last_head_orient = vmd_identity_matrix;
 				vr_head_turn_enabled_prev = 0;
 			}
+			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
+			vm_vec_add2(&Viewer_eye, &head_world);
+			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
 		}
 		else
 		{
 			vr_head_turn_initialized = 0;
+			vr_last_head_orient = vmd_identity_matrix;
 			vr_head_turn_enabled_prev = 0;
 		}
 	}
 	else
 	{
 		vr_head_turn_initialized = 0;
+		vr_last_head_orient = vmd_identity_matrix;
 		vr_head_turn_enabled_prev = 0;
 	}
 
