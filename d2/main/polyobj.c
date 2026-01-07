@@ -758,6 +758,12 @@ void draw_model_picture(int mn,vms_angvec *orient_angles)
 	vm_angles_2_matrix(&temp_orient, orient_angles);
 	draw_polygon_model(&temp_pos,&temp_orient,NULL,mn,0,lrgb,NULL,NULL);
 	g3_end_frame();
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, 1.0, 1.0, 0.0, -1.0, 1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 }
 
 /*

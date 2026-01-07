@@ -98,7 +98,7 @@ defined(__LITTLE_ENDIAN__)	// from physfs_internal.h
 #endif
 
 #ifdef _MSC_VER
-# define inline __inline
+//# define inline __inline
 #endif
 
 #endif //_TYPES_H

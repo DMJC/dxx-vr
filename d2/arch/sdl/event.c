@@ -17,6 +17,7 @@
 #ifdef OGL
 #include "titles.h"
 #include "vr_openvr.h"
+#include "screens.h"
 #endif
 
 #include "joy.h"
@@ -201,26 +202,54 @@ void event_process(void)
 		return;
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
-	wind = window_get_first();
-	while (wind != NULL)
+	vr_openvr_begin_frame();
+	int vr_w, vr_h;
+	vr_openvr_render_size(&vr_w, &vr_h);
+	if (vr_w > 0 && vr_h > 0)
 	{
-		window *prev = window_get_prev(wind);
-		if (window_is_visible(wind))
-			window_send_event(wind, &event);
-		if (!window_exists(wind))
-		{
-			if (!prev) // well there isn't a previous window ...
-				break; // ... just bail out - we've done everything for this frame we can.
-			wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
-		}
-		else
-			wind = window_get_next(wind);
+		grd_curscreen->sc_w = vr_w;
+		grd_curscreen->sc_h = vr_h;
+		gr_set_current_canvas(NULL);
+		grd_curcanv->cv_bitmap.bm_w = vr_w;
+		grd_curcanv->cv_bitmap.bm_h = vr_h;
 	}
+	for (int eye = 0; eye < 2; eye++) {
+		if (Screen_mode == SCREEN_GAME)
+			vr_openvr_bind_eye(eye);
+		else
+			vr_openvr_bind_menu_target();
+		//glOrthof(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+		wind = window_get_first();
+		while (wind != NULL)
+		{
+			window *prev = window_get_prev(wind);
+			if (window_is_visible(wind))
+				window_send_event(wind, &event);
+			if (!window_exists(wind))
+			{
+				if (!prev) // well there isn't a previous window ...
+					break; // ... just bail out - we've done everything for this frame we can.
+				wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
+			}
+			else
+				wind = window_get_next(wind);
+		}
+		if (Screen_mode == SCREEN_GAME) {
+			vr_openvr_unbind_eye();
+		} else {
+			vr_openvr_unbind_menu_target();
+			break;
+		}
+	}
+	if (Screen_mode == SCREEN_GAME)
+		vr_openvr_submit_eyes();
+	else
+		vr_openvr_submit_menu(1);
 
 	gr_flip();
 #ifdef OGL
-	if (VR_briefing_active)
-		vr_openvr_submit_mono_from_screen(1);
+	//if (VR_briefing_active)
+	//	vr_openvr_submit_mono_from_screen(1);
 #endif
 }
 

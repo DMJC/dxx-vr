@@ -1387,7 +1387,7 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 			timer_delay2(50);
 #ifdef USE_OPENVR
 #ifdef OGL
-			GLint prev_fbo = 0;
+			/*GLint prev_fbo = 0;
 			if (vr_openvr_active())
 			{
 				glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
@@ -1395,7 +1395,7 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 				glBindFramebuffer(GL_FRAMEBUFFER, briefing_fbo);
 				glViewport(0, 0, briefing_tex_w, briefing_tex_h);
 				glClear(GL_COLOR_BUFFER_BIT);
-			}
+			}*/
 #endif
 #endif
 			if (!(br->new_screen || br->new_page))
@@ -1430,11 +1430,11 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 				gr_printf(br->text_x, br->text_y, "_");
 #ifdef USE_OPENVR
 #ifdef OGL
-			if (vr_openvr_active())
+			/*if (vr_openvr_active())
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_fbo);
 				vr_openvr_submit_mono_from_texture(briefing_tex, 1.0f, 1.0f, 1);
-			}
+			}*/
 #endif
 #endif
 			break;
