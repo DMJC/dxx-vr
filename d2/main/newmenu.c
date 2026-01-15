@@ -1407,7 +1407,11 @@ int newmenu_draw(window *wind, newmenu *menu)
 	int th = 0, ty, sx, sy;
 	int i;
 	int string_width, string_height, average_width;
-
+#ifdef USE_OPENVR
+#ifdef OGL
+	static int vr_menu_pixel_draw_log_once = 0;
+#endif
+#endif
 	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
 	{
 		newmenu_create_structure ( menu );
@@ -1421,7 +1425,17 @@ int newmenu_draw(window *wind, newmenu *menu)
 	nm_draw_background1(menu->filename);
 	if (menu->filename == NULL)
 		nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
-
+#ifdef USE_OPENVR
+#ifdef OGL
+	if (!vr_menu_pixel_draw_log_once && Screen_mode == SCREEN_MENU && vr_openvr_active())
+	{
+		uint8_t pixel[4] = {0, 0, 0, 0};
+		glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+		con_printf(CON_NORMAL, "OpenVR menu: post-background pixel sample at (0,0) = %u,%u,%u,%u.\n",
+			(unsigned int)pixel[0], (unsigned int)pixel[1], (unsigned int)pixel[2], (unsigned int)pixel[3]);
+	}
+#endif
+#endif
 	gr_set_current_canvas( menu_canvas );
 
 	ty = BORDERY;
@@ -1449,7 +1463,17 @@ int newmenu_draw(window *wind, newmenu *menu)
 		draw_item( &menu->items[i], (i==menu->citem && !menu->all_text),menu->tiny_mode, menu->tabs_flag, menu->scroll_offset );
 
 	}
-
+#ifdef USE_OPENVR
+#ifdef OGL
+	if (!vr_menu_pixel_draw_log_once && Screen_mode == SCREEN_MENU && vr_openvr_active())
+	{
+		uint8_t pixel[4] = {0, 0, 0, 0};
+		glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+		con_printf(CON_NORMAL, "OpenVR menu: post-items pixel sample at (0,0) = %u,%u,%u,%u.\n",
+			(unsigned int)pixel[0], (unsigned int)pixel[1], (unsigned int)pixel[2], (unsigned int)pixel[3]);
+	}
+#endif
+#endif
 	if (menu->is_scroll_box)
 	{
 		menu->last_scroll_check=menu->scroll_offset;
@@ -1484,6 +1508,25 @@ int newmenu_draw(window *wind, newmenu *menu)
 	gr_set_current_canvas(save_canvas);
 #ifdef USE_OPENVR
 #ifdef OGL
+	{
+		static int vr_menu_draw_log_once = 0;
+		if (!vr_menu_draw_log_once && Screen_mode == SCREEN_MENU && vr_openvr_active())
+		{
+			GLint draw_buffer = GL_BACK;
+			glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+			con_printf(CON_NORMAL, "OpenVR menu: post-draw submit from menu canvas.\n");
+			con_printf(CON_NORMAL, "OpenVR menu: post-draw GL_DRAW_BUFFER=%d.\n", (int)draw_buffer);
+			vr_menu_draw_log_once = 1;
+		}
+	}
+	if (!vr_menu_pixel_draw_log_once && Screen_mode == SCREEN_MENU && vr_openvr_active())
+	{
+		uint8_t pixel[4] = {0, 0, 0, 0};
+		glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+		con_printf(CON_NORMAL, "OpenVR menu: post-canvas pixel sample at (0,0) = %u,%u,%u,%u.\n",
+			(unsigned int)pixel[0], (unsigned int)pixel[1], (unsigned int)pixel[2], (unsigned int)pixel[3]);
+		vr_menu_pixel_draw_log_once = 1;
+	}
 	if (Screen_mode == SCREEN_MENU && vr_openvr_active())
 		vr_openvr_submit_mono_from_screen(1);
 //		vr_openvr_submit_mono_from_frontbuffer(1);

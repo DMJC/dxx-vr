@@ -1711,26 +1711,14 @@ void render_frame(fix eye_offset, int window_num)
 			vm_vec_add2(&Viewer_eye, &head_world);
 			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
 		}
-		else
-		{
-			vr_head_turn_initialized = 0;
-			vr_last_head_orient = vmd_identity_matrix;
-			vr_head_turn_enabled_prev = 0;
-		}
 	}
 	else
 	{
-		vr_head_turn_initialized = 0;
-		vr_last_head_orient = vmd_identity_matrix;
-		vr_head_turn_enabled_prev = 0;
-	}
-	else
-	{
-		vr_head_turn_initialized = 0;
-		vr_last_head_orient = vmd_identity_matrix;
-		vr_head_turn_enabled_prev = 0;
-	}
 
+		vr_head_turn_initialized = 0;
+		vr_last_head_orient = vmd_identity_matrix;
+		vr_head_turn_enabled_prev = 0;
+	}
 #ifdef JOHN_ZOOM
 	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
 #else

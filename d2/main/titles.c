@@ -109,6 +109,7 @@ static void briefing_ensure_gl_target(int w, int h)
 {
 	if (!briefing_fbo || !briefing_tex || briefing_tex_w != w || briefing_tex_h != h)
 	{
+		static int briefing_log_once = 0;
 		briefing_release_gl();
 
 		glGenFramebuffers(1, &briefing_fbo);
@@ -123,6 +124,15 @@ static void briefing_ensure_gl_target(int w, int h)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, briefing_tex, 0);
+		if (!briefing_log_once)
+		{
+			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			if (status != GL_FRAMEBUFFER_COMPLETE)
+				con_printf(CON_NORMAL, "OpenVR briefing: framebuffer incomplete (status 0x%x) size %dx%d.\n", status, w, h);
+			else
+				con_printf(CON_NORMAL, "OpenVR briefing: framebuffer ready size %dx%d.\n", w, h);
+			briefing_log_once = 1;
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		briefing_tex_w = w;
@@ -1388,13 +1398,15 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 #ifdef USE_OPENVR
 #ifdef OGL
 			GLint prev_fbo = 0;
+			static int vr_briefing_pixel_log_once = 0;
 			if (vr_openvr_active())
 			{
 				glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
 				briefing_ensure_gl_target(grd_curscreen->sc_w, grd_curscreen->sc_h);
 				glBindFramebuffer(GL_FRAMEBUFFER, briefing_fbo);
-				glViewport(0, 0, briefing_tex_w, briefing_tex_h);
+				glViewport(0, 0, briefing_tex_w, -briefing_tex_h);
 				glClear(GL_COLOR_BUFFER_BIT);
+				ogl_end_frame();
 			}
 #endif
 #endif
@@ -1432,6 +1444,14 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 #ifdef OGL
 			if (vr_openvr_active())
 			{
+				if (!vr_briefing_pixel_log_once)
+				{
+					uint8_t pixel[4] = {0, 0, 0, 0};
+					glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+					con_printf(CON_NORMAL, "OpenVR briefing: pixel sample at (0,0) = %u,%u,%u,%u.\n",
+						(unsigned int)pixel[0], (unsigned int)pixel[1], (unsigned int)pixel[2], (unsigned int)pixel[3]);
+					vr_briefing_pixel_log_once = 1;
+				}
 				glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_fbo);
 				vr_openvr_submit_mono_from_texture(briefing_tex, 1.0f, 1.0f, 1);
 			}
@@ -1466,6 +1486,7 @@ void do_briefing_screens(char *filename, int level_num)
 {
 	briefing *br;
 	window *wind;
+	int prev_vr_briefing = VR_briefing_active;
 
 	if (!filename || !*filename)
 		return;
@@ -1500,7 +1521,9 @@ void do_briefing_screens(char *filename, int level_num)
 
 	// set screen correctly for robot movies
 	set_screen_mode( SCREEN_MOVIE );
-
+#ifdef USE_OPENVR
+	VR_briefing_active = vr_openvr_active() ? 1 : 0;
+#endif
 	gr_set_current_canvas(NULL);
 
 	if (!new_briefing_screen(br, 1))
@@ -1513,6 +1536,9 @@ void do_briefing_screens(char *filename, int level_num)
 	// Too complicated otherwise
 	while (window_exists(wind))
 		event_process();
+#ifdef USE_OPENVR
+	VR_briefing_active = prev_vr_briefing;
+#endif
 }
 
 void do_end_briefing_screens(char *filename)
