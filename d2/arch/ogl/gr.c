@@ -325,7 +325,9 @@ MessageCallback( GLenum source,
 	snprintf(buf, sizeof(buf), "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
 		( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
 		type, severity, message );
+#ifdef _WIN32
 	OutputDebugStringA(buf);
+#endif
 }
 
 int ogl_init_window(int x, int y)
