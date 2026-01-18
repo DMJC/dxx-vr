@@ -40,6 +40,7 @@ extern int PlayMovies(int num_files, const char *filename[], int graphmode, int 
 extern int InitRobotMovie(char *filename);
 extern int RotateRobot();
 extern void DeInitRobotMovie(void);
+extern int Movie_allow_openvr_submit;
 
 // find and initialize the movie libraries
 void init_movies();

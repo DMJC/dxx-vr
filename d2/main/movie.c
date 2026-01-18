@@ -62,7 +62,7 @@ extern char CDROM_dir[];
 #define VID_PAUSE 1
 
 int Vid_State;
-
+int Movie_allow_openvr_submit = 1;
 
 // Subtitle data
 typedef struct {
@@ -129,6 +129,8 @@ int PlayMovie(const char *filename, int must_have)
 
 	if (GameArg.SysNoMovies)
 		return MOVIE_NOT_PLAYED;
+
+	Movie_allow_openvr_submit = 1;
 
 	strcpy(name,filename);
 
@@ -215,7 +217,7 @@ void MovieShowFrame(ubyte *buf, int dstx, int dsty, int bufw, int bufh, int sw, 
 
 	glEnable (GL_BLEND);
 #ifdef USE_OPENVR
-	if (vr_openvr_active() && Screen_mode == SCREEN_MOVIE)
+	if (Movie_allow_openvr_submit && vr_openvr_active() && Screen_mode == SCREEN_MOVIE)
 	{
 		ogl_texture movie_tex;
 
@@ -509,6 +511,7 @@ void DeInitRobotMovie(void)
 {
 	MVE_rmEndMovie();
 	SDL_FreeRW(RoboFile);                           // Close Movie File
+	Movie_allow_openvr_submit = 1;
 }
 
 
@@ -541,6 +544,7 @@ int InitRobotMovie(char *filename)
 	}
 
 	Vid_State = VID_PLAY;
+	Movie_allow_openvr_submit = 0;
 
 	if (MVE_rmPrepMovie((void *)RoboFile, SWIDTH/2.3, SHEIGHT/2.3, 0)) {
 		Int3();

@@ -11,6 +11,7 @@
 #include "key.h"
 #include "mouse.h"
 #include "window.h"
+#include "movie.h"
 #include "timer.h"
 #include "config.h"
 #include "args.h"
@@ -207,7 +208,7 @@ void event_process(void)
 	int vr_w, vr_h;
 	vr_openvr_render_size(&vr_w, &vr_h);
 	if (vr_w > 0 && vr_h > 0)*/
-	int use_vr_menu = vr_openvr_active() && Screen_mode != SCREEN_MOVIE;
+	int use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || !Movie_allow_openvr_submit);
 	if (use_vr_menu)
 	{
 		vr_openvr_begin_frame();
