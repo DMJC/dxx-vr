@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "playsave.h"
 #include "hudmsg.h"
+#include "vr_openvr.h"
 
 #define NEWHOMER
 
@@ -67,6 +68,25 @@ extern void newdemo_record_guided_end();
 extern void newdemo_record_guided_start();
 
 int find_homing_object(vms_vector *curpos, object *tracker);
+
+static vms_vector vr_get_player_shot_orientation(const object *obj)
+{
+	vms_vector shot_orientation = obj->orient.fvec;
+
+	if (vr_openvr_active())
+	{
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
+		{
+			vms_matrix view_orient;
+			vm_matrix_x_matrix(&view_orient, &obj->orient, &head_orient);
+			shot_orientation = view_orient.fvec;
+		}
+	}
+
+	return shot_orientation;
+}
 
 //---------------------------------------------------------------------------------
 // Called by render code.... determines if the laser is from a robot or the
@@ -1768,7 +1788,9 @@ void do_laser_firing_player(void)
 			if (Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS)
 				flags |= LASER_QUAD;
 
-			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires, Objects[Players[Player_num].objnum].orient.fvec);
+//			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires, Objects[Players[Player_num].objnum].orient.fvec);
+			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires,
+				vr_get_player_shot_orientation(&Objects[Players[Player_num].objnum]));
 
 			int warning_increment = 250/12;
 			int pre_ammo = plp->primary_ammo[VULCAN_INDEX];

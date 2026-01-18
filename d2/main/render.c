@@ -1610,6 +1610,8 @@ fix Zoom_factor=F1_0;
 void render_frame(fix eye_offset, int window_num)
 {
 	int start_seg_num;
+	vms_vector viewer_pos_save = Viewer->pos;
+	int restore_viewer_pos = 0;
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
@@ -1676,6 +1678,10 @@ void render_frame(fix eye_offset, int window_num)
 		vms_vector head_pos;
 		if (vr_openvr_head_pose(&head_orient, &head_pos))
 		{
+			vms_angvec head_angles;
+			vm_extract_angles_matrix(&head_angles, &head_orient);
+			head_angles.b = -head_angles.b;
+			vm_angles_2_matrix(&head_orient, &head_angles);
 			vms_matrix delta_orient = vmd_identity_matrix;
 			vms_vector head_world;
 			vms_matrix ship_orient = base_orient;
@@ -1709,6 +1715,11 @@ void render_frame(fix eye_offset, int window_num)
 			}
 			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
 			vm_vec_add2(&Viewer_eye, &head_world);
+			if (Viewer == get_player_view_object())
+			{
+				vm_vec_add2(&Viewer->pos, &head_world);
+				restore_viewer_pos = 1;
+			}
 			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
 		}
 		else
@@ -1742,6 +1753,9 @@ void render_frame(fix eye_offset, int window_num)
 	#endif
 
 	render_mine(start_seg_num, eye_offset, window_num);
+
+	if (restore_viewer_pos)
+		Viewer->pos = viewer_pos_save;
 
 	g3_end_frame();
 

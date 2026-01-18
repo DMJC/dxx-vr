@@ -208,7 +208,6 @@ static void vr_openvr_draw_curved_quad(GLuint texture, float tex_u_max, float te
 		float x = sinf(angle) * radius;
 		float z = -cosf(angle) * radius;
 		float u = t * tex_u_max;
-
 		glTexCoord2f(u, tex_v_max);
 		glVertex3f(x, height * 0.5f, z);
 		glTexCoord2f(u, 0.0f);

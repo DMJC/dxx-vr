@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "config.h"
 #include "args.h"
+#include "game.h"
 #ifdef OGL
 #include "titles.h"
 #include "vr_openvr.h"
@@ -202,23 +203,36 @@ void event_process(void)
 		return;
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
-	vr_openvr_begin_frame();
+/*	vr_openvr_begin_frame();
 	int vr_w, vr_h;
 	vr_openvr_render_size(&vr_w, &vr_h);
-	if (vr_w > 0 && vr_h > 0)
+	if (vr_w > 0 && vr_h > 0)*/
+	int use_vr_menu = vr_openvr_active() && Screen_mode != SCREEN_MOVIE;
+	if (use_vr_menu)
 	{
-		grd_curscreen->sc_w = vr_w;
+		vr_openvr_begin_frame();
+		int vr_w, vr_h;
+		vr_openvr_render_size(&vr_w, &vr_h);
+		if (vr_w > 0 && vr_h > 0)
+		{
+			grd_curscreen->sc_w = vr_w;
+			grd_curscreen->sc_h = vr_h;
+			gr_set_current_canvas(NULL);
+			grd_curcanv->cv_bitmap.bm_w = vr_w;
+			grd_curcanv->cv_bitmap.bm_h = vr_h;
+		}
+
+/*		grd_curscreen->sc_w = vr_w;
 		grd_curscreen->sc_h = vr_h;
 		gr_set_current_canvas(NULL);
 		grd_curcanv->cv_bitmap.bm_w = vr_w;
-		grd_curcanv->cv_bitmap.bm_h = vr_h;
+		grd_curcanv->cv_bitmap.bm_h = vr_h;*/
 	}
 	for (int eye = 0; eye < 2; eye++) {
 		if (Screen_mode == SCREEN_GAME)
 			vr_openvr_bind_eye(eye);
-		else
+		else if (use_vr_menu)
 			vr_openvr_bind_menu_target();
-		//glOrthof(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 		wind = window_get_first();
 		while (wind != NULL)
 		{
@@ -236,20 +250,18 @@ void event_process(void)
 		}
 		if (Screen_mode == SCREEN_GAME) {
 			vr_openvr_unbind_eye();
-		} else {
+		} else if (use_vr_menu) {
 			vr_openvr_unbind_menu_target();
 			break;
 		}
 	}
 	if (Screen_mode == SCREEN_GAME)
 		vr_openvr_submit_eyes();
-	else
+	else if (use_vr_menu)
 		vr_openvr_submit_menu(1);
 
 	gr_flip();
 #ifdef OGL
-	//if (VR_briefing_active)
-	//	vr_openvr_submit_mono_from_screen(1);
 #endif
 }
 

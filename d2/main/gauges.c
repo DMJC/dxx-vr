@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
+#include "vr_openvr.h"
 
 //bitmap numbers for gauges
 #define GAUGE_SHIELDS			0		//0..9, in decreasing order (100%,90%...0%)
@@ -2374,7 +2375,19 @@ void show_reticle(int reticle_type, int secondary_display)
 	if (Newdemo_state==ND_STATE_PLAYBACK && Viewer->type != OBJ_PLAYER)
 		 return;
 
-	x = grd_curcanv->cv_bitmap.bm_w/2;
+//	x = grd_curcanv->cv_bitmap.bm_w/2;
+	x = grd_curcanv->cv_bitmap.bm_w / 2;
+	#ifdef USE_OPENVR
+		if (vr_openvr_active()) {
+			int eye = vr_openvr_current_eye();
+			if (eye == 0) {
+				x = grd_curcanv->cv_bitmap.bm_w;
+			} else if (eye == 1) {
+				x = 0;
+			}
+		}
+	#endif
+
 	y = grd_curcanv->cv_bitmap.bm_h/2;
 	size = (grd_curcanv->cv_bitmap.bm_h / (32-(PlayerCfg.ReticleSize*4)));
 

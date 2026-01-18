@@ -42,6 +42,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "vclip.h"
 #include "fireball.h"
+#include "vr_openvr.h"
 
 //look at keyboard, mouse, joystick, CyberMan, whatever, and set 
 //physics vars rotvel, velocity
@@ -172,14 +173,26 @@ void read_flying_controls( object * obj )
 		}
 	}
 
+	vms_matrix thrust_orient = obj->orient;
+	if (vr_openvr_active())
+	{
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
+			vm_matrix_x_matrix(&thrust_orient, &obj->orient, &head_orient);
+	}
+
 	// Set object's thrust vector for forward/backward
-	vm_vec_copy_scale(&obj->mtype.phys_info.thrust,&obj->orient.fvec, forward_thrust_time );
+//	vm_vec_copy_scale(&obj->mtype.phys_info.thrust,&obj->orient.fvec, forward_thrust_time );
+	vm_vec_copy_scale(&obj->mtype.phys_info.thrust, &thrust_orient.fvec, forward_thrust_time );
 	
 	// slide left/right
-	vm_vec_scale_add2(&obj->mtype.phys_info.thrust,&obj->orient.rvec, Controls.sideways_thrust_time );
+//	vm_vec_scale_add2(&obj->mtype.phys_info.thrust,&obj->orient.rvec, Controls.sideways_thrust_time );
+	vm_vec_scale_add2(&obj->mtype.phys_info.thrust, &thrust_orient.rvec, Controls.sideways_thrust_time );
 
 	// slide up/down
-	vm_vec_scale_add2(&obj->mtype.phys_info.thrust,&obj->orient.uvec, Controls.vertical_thrust_time );
+//	vm_vec_scale_add2(&obj->mtype.phys_info.thrust,&obj->orient.uvec, Controls.vertical_thrust_time );
+	vm_vec_scale_add2(&obj->mtype.phys_info.thrust, &thrust_orient.uvec, Controls.vertical_thrust_time );
 
 	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE)
 	{
