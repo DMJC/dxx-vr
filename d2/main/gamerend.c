@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "timer.h"
 #include "pstypes.h"
 #include "console.h"
@@ -1026,66 +1027,71 @@ void toggle_cockpit()
 int last_drawn_cockpit = -1;
 extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 
-static int cockpit_vr_x_offset(void)
+static void cockpit_draw_offset(int *x, int *y)
 {
+	int offset_x = 0;
+	int offset_y = 0;
+
 #ifdef USE_OPENVR
-	if (vr_openvr_active()) {
-		int eye = vr_openvr_current_eye();
-		if (eye == 1)
-			return -grd_curcanv->cv_bitmap.bm_w;
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curscreen->sc_w;
+			const float height = (float)grd_curscreen->sc_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+			offset_x = center_x - (grd_curscreen->sc_w / 2);
+			offset_y = center_y - (grd_curscreen->sc_h / 2);
+		}
 	}
 #endif
-	return 0;
+
+	*x = offset_x;
+	*y = offset_y;
 }
 
 // This actually renders the new cockpit onto the screen.
 void update_cockpits()
 {
-	static int last_disablecockpit = -1;
-
-	if (last_disablecockpit != PlayerCfg.DisableCockpit) {
-		last_drawn_cockpit = -1;
-		last_disablecockpit = PlayerCfg.DisableCockpit;
-	}
-
-	if (vr_openvr_active() && PlayerCfg.DisableCockpit) {
-		gr_set_current_canvas(NULL);
-		if (PlayerCfg.CurrentCockpitMode != last_drawn_cockpit)
-			last_drawn_cockpit = PlayerCfg.CurrentCockpitMode;
-		return;
-	}
-
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not draw cockpit.
 	} else {
 		grs_bitmap *bm;
-		int cockpit_x = cockpit_vr_x_offset();
 
 		if (PlayerCfg.CurrentCockpitMode < N_COCKPIT_BITMAPS/2) {
 			PIGGY_PAGE_IN(cockpit_bitmap[PlayerCfg.CurrentCockpitMode+(HIRESMODE?(Num_cockpits/2):0)]);
 			bm=&GameBitmaps[cockpit_bitmap[PlayerCfg.CurrentCockpitMode+(HIRESMODE?(Num_cockpits/2):0)].index];
 		}
 
+		int cockpit_offset_x = 0;
+		int cockpit_offset_y = 0;
+
+		cockpit_draw_offset(&cockpit_offset_x, &cockpit_offset_y);
+
 		switch (PlayerCfg.CurrentCockpitMode) {
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-//				ogl_ubitmapm_cs (0, 0, -1, -1, bm, 255, F1_0);
-				ogl_ubitmapm_cs(cockpit_x, 0, -1, -1, bm, 255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, -1, bm, 255, F1_0);
 #else
-//				gr_ubitmapm(0,0, bm);
-				gr_ubitmapm(cockpit_x, 0, bm);
+				gr_ubitmapm(cockpit_offset_x, cockpit_offset_y, bm);
 #endif
 				break;
 
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-//				ogl_ubitmapm_cs (0, 0, -1, -1, bm, 255, F1_0);
-				ogl_ubitmapm_cs(cockpit_x, 0, -1, -1, bm, 255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, -1, bm, 255, F1_0);
 #else
-//				gr_ubitmapm(0,0, bm);
-				gr_ubitmapm(cockpit_x, 0, bm);
+				gr_ubitmapm(cockpit_offset_x, cockpit_offset_y, bm);
 #endif
 				break;
 	
@@ -1096,11 +1102,9 @@ void update_cockpits()
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-//				ogl_ubitmapm_cs (0, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
-				ogl_ubitmapm_cs(cockpit_x, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72) + cockpit_offset_y, -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
 #else
-//				gr_ubitmapm(0,SHEIGHT-bm->bm_h,bm);
-				gr_ubitmapm(cockpit_x, SHEIGHT-bm->bm_h, bm);
+				gr_ubitmapm(cockpit_offset_x, SHEIGHT - bm->bm_h + cockpit_offset_y, bm);
 #endif
 				break;
 	
