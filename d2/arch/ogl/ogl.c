@@ -464,7 +464,8 @@ GLfloat *circle_array_init_2(int nsides, float xsc, float xo, float ysc, float y
 	return vertex_array;
 }
 
-void ogl_draw_vertex_reticle(int cross,int primary,int secondary,int color,int alpha,int size_offs)
+//void ogl_draw_vertex_reticle(int cross,int primary,int secondary,int color,int alpha,int size_offs)
+void ogl_draw_vertex_reticle(int cross,int primary,int secondary,int color,int alpha,int size_offs,int x,int y)
 {
 	int size=270+(size_offs*20), i;
 	float scale = ((float)SWIDTH/SHEIGHT), ret_rgba[4], ret_dark_rgba[4];
@@ -542,7 +543,8 @@ void ogl_draw_vertex_reticle(int cross,int primary,int secondary,int color,int a
 	primary_lca[1][3] = primary_lca[1][7] = primary_lca[0][11] = primary_lca[0][15] = ret_dark_rgba[3];
 
 	glPushMatrix();
-	glTranslatef((grd_curcanv->cv_bitmap.bm_w/2+grd_curcanv->cv_bitmap.bm_x)/(float)last_width,1.0-(grd_curcanv->cv_bitmap.bm_h/2+grd_curcanv->cv_bitmap.bm_y)/(float)last_height,0);
+	glTranslatef((x+grd_curcanv->cv_bitmap.bm_x)/(float)last_width,1.0-(y+grd_curcanv->cv_bitmap.bm_y)/(float)last_height,0);
+//	glTranslatef((grd_curcanv->cv_bitmap.bm_w/2+grd_curcanv->cv_bitmap.bm_x)/(float)last_width,1.0-(grd_curcanv->cv_bitmap.bm_h/2+grd_curcanv->cv_bitmap.bm_y)/(float)last_height,0);
 
 	if (scale >= 1)
 	{
@@ -1224,10 +1226,6 @@ void gr_flip(void)
 		ogl_texture_stats();
 
 	ogl_do_palfx();
-#ifdef USE_OPENVR
-	//if (vr_openvr_active() && Screen_mode != SCREEN_GAME && (Screen_mode != SCREEN_MOVIE || VR_briefing_active))
-	//	vr_openvr_submit_mono_from_screen(Screen_mode == SCREEN_MOVIE);
-#endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 }

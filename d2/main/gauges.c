@@ -54,8 +54,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "rle.h"
 #include "byteswap.h"
+#include "../3d/globvars.h"
 #ifdef OGL
 #include "ogl_init.h"
+#endif
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
 #endif
 #include "args.h"
 #include "net_udp.h"
@@ -2362,6 +2366,35 @@ static const xy cross_offsets[4] = 		{ {-8,-5},	{-4,-2},	{-4,-2}, {-2,-1} };
 static const xy primary_offsets[4] = 	{ {-30,14}, {-16,6},	{-15,6}, {-8, 2} };
 static const xy secondary_offsets[4] =	{ {-24,2},	{-12,0}, {-12,1}, {-6,-2} };
 
+static void reticle_center(int *x, int *y)
+{
+	int center_x = grd_curcanv->cv_bitmap.bm_w / 2;
+	int center_y = grd_curcanv->cv_bitmap.bm_h / 2;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+		}
+	}
+#endif
+
+	*x = center_x;
+	*y = center_y;
+}
+
 //draw the reticle
 void show_reticle(int reticle_type, int secondary_display)
 {
@@ -2375,20 +2408,12 @@ void show_reticle(int reticle_type, int secondary_display)
 	if (Newdemo_state==ND_STATE_PLAYBACK && Viewer->type != OBJ_PLAYER)
 		 return;
 
-//	x = grd_curcanv->cv_bitmap.bm_w/2;
-	x = grd_curcanv->cv_bitmap.bm_w / 2;
 	#ifdef USE_OPENVR
-		if (vr_openvr_active()) {
-			int eye = vr_openvr_current_eye();
-			if (eye == 0) {
-				x = grd_curcanv->cv_bitmap.bm_w;
-			} else if (eye == 1) {
-				x = 0;
-			}
-		}
-	#endif
-
+	reticle_center(&x, &y);
+	#else
+	x = grd_curcanv->cv_bitmap.bm_w / 2;
 	y = grd_curcanv->cv_bitmap.bm_h/2;
+	#endif
 	size = (grd_curcanv->cv_bitmap.bm_h / (32-(PlayerCfg.ReticleSize*4)));
 
 	laser_ready = allowed_to_fire_laser();
@@ -2444,7 +2469,8 @@ void show_reticle(int reticle_type, int secondary_display)
 		case RET_TYPE_CLASSIC_REBOOT:
 		{
 #ifdef OGL
-			ogl_draw_vertex_reticle(cross_bm_num,primary_bm_num,secondary_bm_num,BM_XRGB(PlayerCfg.ReticleRGBA[0],PlayerCfg.ReticleRGBA[1],PlayerCfg.ReticleRGBA[2]),PlayerCfg.ReticleRGBA[3],PlayerCfg.ReticleSize);
+//			ogl_draw_vertex_reticle(cross_bm_num,primary_bm_num,secondary_bm_num,BM_XRGB(PlayerCfg.ReticleRGBA[0],PlayerCfg.ReticleRGBA[1],PlayerCfg.ReticleRGBA[2]),PlayerCfg.ReticleRGBA[3],PlayerCfg.ReticleSize);
+			ogl_draw_vertex_reticle(cross_bm_num,primary_bm_num,secondary_bm_num,BM_XRGB(PlayerCfg.ReticleRGBA[0],PlayerCfg.ReticleRGBA[1],PlayerCfg.ReticleRGBA[2]),PlayerCfg.ReticleRGBA[3],PlayerCfg.ReticleSize,x,y);
 #endif
 			break;
 

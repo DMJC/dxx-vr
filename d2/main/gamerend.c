@@ -963,6 +963,9 @@ static void game_render_frame_vr(void)
 	int vr_w = 0;
 	int vr_h = 0;
 
+	if (PlayerCfg.DisableCockpit && PlayerCfg.CurrentCockpitMode != CM_FULL_SCREEN)
+		select_cockpit(CM_FULL_SCREEN);
+
 	vr_openvr_begin_frame();
 	vr_openvr_render_size(&vr_w, &vr_h);
 	if (vr_w > 0 && vr_h > 0)
@@ -1038,6 +1041,20 @@ static int cockpit_vr_x_offset(void)
 // This actually renders the new cockpit onto the screen.
 void update_cockpits()
 {
+	static int last_disablecockpit = -1;
+
+	if (last_disablecockpit != PlayerCfg.DisableCockpit) {
+		last_drawn_cockpit = -1;
+		last_disablecockpit = PlayerCfg.DisableCockpit;
+	}
+
+	if (vr_openvr_active() && PlayerCfg.DisableCockpit) {
+		gr_set_current_canvas(NULL);
+		if (PlayerCfg.CurrentCockpitMode != last_drawn_cockpit)
+			last_drawn_cockpit = PlayerCfg.CurrentCockpitMode;
+		return;
+	}
+
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not draw cockpit.
 	} else {

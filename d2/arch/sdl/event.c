@@ -204,10 +204,6 @@ void event_process(void)
 		return;
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
-/*	vr_openvr_begin_frame();
-	int vr_w, vr_h;
-	vr_openvr_render_size(&vr_w, &vr_h);
-	if (vr_w > 0 && vr_h > 0)*/
 	int use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || !Movie_allow_openvr_submit);
 	if (use_vr_menu)
 	{
@@ -223,11 +219,6 @@ void event_process(void)
 			grd_curcanv->cv_bitmap.bm_h = vr_h;
 		}
 
-/*		grd_curscreen->sc_w = vr_w;
-		grd_curscreen->sc_h = vr_h;
-		gr_set_current_canvas(NULL);
-		grd_curcanv->cv_bitmap.bm_w = vr_w;
-		grd_curcanv->cv_bitmap.bm_h = vr_h;*/
 	}
 	for (int eye = 0; eye < 2; eye++) {
 		if (Screen_mode == SCREEN_GAME)

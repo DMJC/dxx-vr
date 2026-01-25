@@ -665,13 +665,16 @@ static void vr_openvr_submit_mono_from_buffer(int curved, int read_front)
 
 	for (int eye = 0; eye < 2; eye++)
 	{
+		const int mono_eye = -1;
 		glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
 		glViewport(0, 0, vr_render_width, vr_render_height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (curved)
-			vr_openvr_draw_curved_quad(vr_menu_tex, 1.0f, 1.0f, eye);
+//			vr_openvr_draw_curved_quad(vr_menu_tex, 1.0f, 1.0f, eye);
+			vr_openvr_draw_curved_quad(vr_menu_tex, 1.0f, 1.0f, mono_eye);
 		else
-			vr_openvr_draw_flat_quad(vr_menu_tex, 1.0f, 1.0f, eye);
+//			vr_openvr_draw_flat_quad(vr_menu_tex, 1.0f, 1.0f, eye);
+			vr_openvr_draw_flat_quad(vr_menu_tex, 1.0f, 1.0f, mono_eye);
 	}
     if (prev_read_fbo)
 	{
