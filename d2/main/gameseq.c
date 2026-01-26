@@ -936,9 +936,6 @@ void DoEndLevelScoreGlitz(int network)
 	if ( network && (Game_mode & GM_NETWORK) )
 	{
 		if (EMULATING_D1)
-#ifdef USE_OPENVR
-			newmenu_set_vr_offset(1);
-#endif
 		newmenu_do2(NULL, title, c, m, multi_endlevel_poll1, NULL, 0, STARS_BACKGROUND);
 		if (EMULATING_D1)
 			newmenu_set_vr_offset(0);
@@ -948,9 +945,6 @@ void DoEndLevelScoreGlitz(int network)
 		// NOTE LINK TO ABOVE!!!
 	{
 		if (EMULATING_D1)
-#ifdef USE_OPENVR
-			newmenu_set_vr_offset(1);
-#endif
 		newmenu_do2(NULL, title, c, m, NULL, NULL, 0, STARS_BACKGROUND);
 		if (EMULATING_D1)
 			newmenu_set_vr_offset(0);

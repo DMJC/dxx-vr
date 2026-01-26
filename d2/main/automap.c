@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "dxxerror.h"
 #include "3d.h"
@@ -68,6 +69,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -137,6 +141,41 @@ typedef struct automap
 	int			red_48;
 	control_info controls;
 } automap;
+
+#ifdef USE_OPENVR
+static void automap_vr_offset(int *x, int *y)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	if (vr_openvr_active())
+	{
+		int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+
+		if (eye < 0)
+			eye = 0;
+
+		if (vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curscreen->sc_w;
+			const float height = (float)grd_curscreen->sc_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+			offset_x = center_x - (grd_curscreen->sc_w / 2);
+			offset_y = center_y - (grd_curscreen->sc_h / 2);
+		}
+	}
+
+	*x = offset_x;
+	*y = offset_y;
+}
+#endif
 
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
 #define MAX_EDGES 6000  // Determined by loading all the levels by John & Mike, Feb 9, 1995
@@ -525,7 +564,12 @@ void draw_automap(automap *am)
 	int color;
 	object * objp;
 	g3s_point sphere_point;
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
 
+	automap_vr_offset(&offset_x, &offset_y);
+#endif
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
 
@@ -533,13 +577,22 @@ void draw_automap(automap *am)
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
+#ifdef USE_OPENVR
+	gr_string((SWIDTH/8) + offset_x, (SHEIGHT/16) + offset_y, TXT_AUTOMAP);
+#else
 	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
+#endif
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
+#ifdef USE_OPENVR
+	gr_string((SWIDTH/10.666) + offset_x, (SHEIGHT/1.126) + offset_y, TXT_TURN_SHIP);
+	gr_printf((SWIDTH/10.666) + offset_x, (SHEIGHT/1.083) + offset_y, "F9/F10 Changes viewing distance");
+	gr_string((SWIDTH/10.666) + offset_x, (SHEIGHT/1.043) + offset_y, TXT_AUTOMAP_MARKER);
+#else
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.126), TXT_TURN_SHIP);
 	gr_printf((SWIDTH/10.666), (SHEIGHT/1.083), "F9/F10 Changes viewing distance");
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.043), TXT_AUTOMAP_MARKER);
-
+#endif
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -622,12 +675,20 @@ void draw_automap(automap *am)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
+#ifdef USE_OPENVR
+		gr_printf((SWIDTH/64) + offset_x, (SHEIGHT/18) + offset_y, "%s", msg);
+#else
 		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
+#endif
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
-		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
+#ifdef USE_OPENVR
+		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8) + offset_x, GHEIGHT-(GHEIGHT/8) + offset_y, GHEIGHT/5);
+#else
 
+		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
+#endif
 	am->t2 = timer_query();
 	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
 	{
@@ -928,8 +989,17 @@ void do_automap()
 	if (pcx_error != PCX_ERROR_NONE)
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
-	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
+#ifdef USE_OPENVR
+	{
+		int offset_x = 0;
+		int offset_y = 0;
 
+		automap_vr_offset(&offset_x, &offset_y);
+		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
+	}
+#else
+	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
+#endif
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }

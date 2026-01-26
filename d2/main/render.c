@@ -1687,7 +1687,7 @@ void render_frame(fix eye_offset, int window_num)
 			vms_matrix delta_orient = vmd_identity_matrix;
 			vms_vector head_world;
 			vms_matrix ship_orient = base_orient;
-			if (GameCfg.VRHeadTurnsShip && Viewer == get_player_view_object())
+			if (GameCfg.VRHeadTurnsShip && Viewer == get_player_view_object() && !Rear_view)
 			{
 				if (!vr_head_turn_initialized)
 				{
