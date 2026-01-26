@@ -92,7 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define RETICLE_CROSS			46
 #define RETICLE_PRIMARY			48
 #define RETICLE_SECONDARY		51
-#define GAUGE_HOMING_WARNING_ON	56
+#define GAUGE_HOMING_WARNING_ON		56
 #define GAUGE_HOMING_WARNING_OFF	57
 #define KEY_ICON_BLUE			68
 #define KEY_ICON_YELLOW			69
@@ -1670,6 +1670,12 @@ void cockpit_decode_alpha(grs_bitmap *bm)
 	static unsigned char *cur=NULL;
 	static short cur_w=0, cur_h=0;
 	static unsigned char cockpitbuf[1024*1024];
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 
 	// check if we processed this bitmap already
 	if (cur==bm->bm_data && cur_w == bm->bm_w && cur_h == bm->bm_h)
@@ -1742,10 +1748,27 @@ void draw_wbu_overlay()
 
 	cockpit_decode_alpha(bm);
 
-	if (WinBoxOverlay[0] != NULL)
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
+	if (WinBoxOverlay[0] != NULL){
+#ifdef USE_OPENVR
+
+		hud_bitblt(HUD_SCALE_X(PRIMARY_W_BOX_LEFT-2) + offset_x,HUD_SCALE_Y(PRIMARY_W_BOX_TOP-2) + offset_y,WinBoxOverlay[0]);
+#else
 		hud_bitblt(HUD_SCALE_X(PRIMARY_W_BOX_LEFT-2),HUD_SCALE_Y(PRIMARY_W_BOX_TOP-2),WinBoxOverlay[0]);
-	if (WinBoxOverlay[1] != NULL)
+#endif
+	}
+	if (WinBoxOverlay[1] != NULL){
+#ifdef USE_OPENVR
+		hud_bitblt(HUD_SCALE_X(SECONDARY_W_BOX_LEFT-2) + offset_x,HUD_SCALE_Y(SECONDARY_W_BOX_TOP-2) + offset_y,WinBoxOverlay[1]);
+#else
 		hud_bitblt(HUD_SCALE_X(SECONDARY_W_BOX_LEFT-2),HUD_SCALE_Y(SECONDARY_W_BOX_TOP-2),WinBoxOverlay[1]);
+#endif
+	}
 }
 
 void close_gauges()

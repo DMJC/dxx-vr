@@ -105,12 +105,14 @@ grs_bitmap *nm_background_sub = NULL;
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
 
 #ifdef USE_OPENVR
+static int menu_vr_offset_override = 0;
+
 static void menu_vr_offset(int *x, int *y)
 {
 	int offset_x = 0;
 	int offset_y = 0;
 
-	if (vr_openvr_active() && !(Game_mode & GM_GAME_OVER))
+	if (vr_openvr_active() && (menu_vr_offset_override || !(Game_mode & GM_GAME_OVER)))
 	{
 		int eye = vr_openvr_current_eye();
 		float l = 0.0f;
@@ -138,6 +140,16 @@ static void menu_vr_offset(int *x, int *y)
 	*y = offset_y;
 }
 #endif
+
+void newmenu_set_vr_offset(int enable)
+{
+#ifdef USE_OPENVR
+	menu_vr_offset_override = enable;
+#else
+	(void)enable;
+#endif
+}
+
 
 void newmenu_free_background()	{
 	if (nm_background.bm_data)
