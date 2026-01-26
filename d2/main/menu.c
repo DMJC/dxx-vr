@@ -2557,7 +2557,12 @@ int polygon_models_viewer_handler(window *wind, d_event *event)
 			gr_use_palette_table("groupa.256");
 			key_toggle_repeat(1);
 			view_idx = 0;
+#ifdef USE_OPENVR
+			ang.p = 0;
+			ang.b = F1_0/2;
+#else
 			ang.p = ang.b = 0;
+#endif
 			ang.h = F0_5-1;
 			break;
 		case EVENT_KEY_COMMAND:
@@ -2594,7 +2599,12 @@ int polygon_models_viewer_handler(window *wind, d_event *event)
 					ang.b += 100;
 					break;
 				case KEY_R:
+#ifdef USE_OPENVR
+					ang.p = 0;
+					ang.b = F1_0/2;
+#else
 					ang.p = ang.b = 0;
+#endif
 					ang.h = F0_5-1;
 					break;
 				default:
