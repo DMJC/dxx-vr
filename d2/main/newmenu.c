@@ -22,6 +22,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "pstypes.h"
 #include "dxxerror.h"
@@ -102,6 +103,41 @@ grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
+
+#ifdef USE_OPENVR
+static void menu_vr_offset(int *x, int *y)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	if (vr_openvr_active() && !(Game_mode & GM_GAME_OVER))
+	{
+		int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+
+		if (eye < 0)
+			eye = 0;
+
+		if (vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curscreen->sc_w;
+			const float height = (float)grd_curscreen->sc_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+			offset_x = center_x - (grd_curscreen->sc_w / 2);
+			offset_y = center_y - (grd_curscreen->sc_h / 2);
+		}
+	}
+
+	*x = offset_x;
+	*y = offset_y;
+}
+#endif
 
 void newmenu_free_background()	{
 	if (nm_background.bm_data)
@@ -1411,6 +1447,16 @@ int newmenu_draw(window *wind, newmenu *menu)
 	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
 	{
 		newmenu_create_structure ( menu );
+#ifdef USE_OPENVR
+		{
+			int offset_x = 0;
+			int offset_y = 0;
+
+			menu_vr_offset(&offset_x, &offset_y);
+			menu->x += offset_x;
+			menu->y += offset_y;
+		}
+#endif
 		if (menu_canvas)
 		{
 			gr_init_sub_canvas(menu_canvas, &grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h);
@@ -1606,7 +1652,16 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	//set_screen_mode(SCREEN_MENU);	//hafta set the screen mode here or fonts might get changed/freed up if screen res changes
 
 	newmenu_create_structure(menu);
+#ifdef USE_OPENVR
+	{
+		int offset_x = 0;
+		int offset_y = 0;
 
+		menu_vr_offset(&offset_x, &offset_y);
+		menu->x += offset_x;
+		menu->y += offset_y;
+	}
+#endif
 	// Create the basic window
 	if (menu)
 		wind = window_create(&grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h, (int (*)(window *, d_event *, void *))newmenu_handler, menu);
