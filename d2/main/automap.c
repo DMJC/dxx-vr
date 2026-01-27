@@ -150,25 +150,22 @@ static void automap_vr_offset(int *x, int *y)
 
 	if (vr_openvr_active())
 	{
-		int eye = vr_openvr_current_eye();
+		const int eye = vr_openvr_current_eye();
 		float l = 0.0f;
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
 
-		if (eye < 0)
-			eye = 0;
-
-		if (vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
 		{
-			const float width = (float)grd_curscreen->sc_w;
-			const float height = (float)grd_curscreen->sc_h;
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
 			const float x_ndc = (r + l) / (r - l);
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curscreen->sc_w / 2);
-			offset_y = center_y - (grd_curscreen->sc_h / 2);
+			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
+			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
 		}
 	}
 
@@ -569,6 +566,7 @@ void draw_automap(automap *am)
 	int offset_y = 0;
 
 	automap_vr_offset(&offset_x, &offset_y);
+	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
 #endif
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
