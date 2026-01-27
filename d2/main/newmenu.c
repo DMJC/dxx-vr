@@ -79,6 +79,7 @@ struct newmenu
 {
 	window			*wind;
 	int				x,y,w,h;
+	int				base_x, base_y;
 	short			swidth, sheight; float fntscalex, fntscaley; // with these we check if resolution or fonts have changed so menu structure can be recreated
 	char			*title;
 	char			*subtitle;
@@ -114,25 +115,22 @@ static void menu_vr_offset(int *x, int *y)
 
 	if (vr_openvr_active() && (menu_vr_offset_override || !(Game_mode & GM_GAME_OVER)))
 	{
-		int eye = vr_openvr_current_eye();
+		const int eye = vr_openvr_current_eye();
 		float l = 0.0f;
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
 
-		if (eye < 0)
-			eye = 0;
-
-		if (vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
 		{
-			const float width = (float)grd_curscreen->sc_w;
-			const float height = (float)grd_curscreen->sc_h;
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
 			const float x_ndc = (r + l) / (r - l);
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curscreen->sc_w / 2);
-			offset_y = center_y - (grd_curscreen->sc_h / 2);
+			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
+			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
 		}
 	}
 
@@ -1395,6 +1393,9 @@ void newmenu_create_structure( newmenu *menu )
 	if ( menu->x < 0 ) menu->x = 0;
 	if ( menu->y < 0 ) menu->y = 0;
 
+	menu->base_x = menu->x;
+	menu->base_y = menu->y;
+
 	nm_draw_background1( menu->filename );
 
 	// Update all item's x & y values.
@@ -1455,24 +1456,33 @@ int newmenu_draw(window *wind, newmenu *menu)
 	int th = 0, ty, sx, sy;
 	int i;
 	int string_width, string_height, average_width;
+	int refresh_canvas = 0;
 
 	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
 	{
 		newmenu_create_structure ( menu );
-#ifdef USE_OPENVR
-		{
-			int offset_x = 0;
-			int offset_y = 0;
+		refresh_canvas = 1;
+	}
 
-			menu_vr_offset(&offset_x, &offset_y);
-			menu->x += offset_x;
-			menu->y += offset_y;
-		}
-#endif
-		if (menu_canvas)
+#ifdef USE_OPENVR
+	{
+		int offset_x = 0;
+		int offset_y = 0;
+
+		menu->x = menu->base_x;
+		menu->y = menu->base_y;
+		if (vr_openvr_active())
 		{
-			gr_init_sub_canvas(menu_canvas, &grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h);
+			menu_vr_offset(&offset_x, &offset_y);
+			refresh_canvas = 1;
 		}
+		menu->x += offset_x;
+		menu->y += offset_y;
+	}
+#endif
+	if (menu_canvas && refresh_canvas)
+	{
+		gr_init_sub_canvas(menu_canvas, &grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h);
 	}
 
 	gr_set_current_canvas( NULL );
@@ -1669,6 +1679,8 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 		int offset_x = 0;
 		int offset_y = 0;
 
+		menu->x = menu->base_x;
+		menu->y = menu->base_y;
 		menu_vr_offset(&offset_x, &offset_y);
 		menu->x += offset_x;
 		menu->y += offset_y;
