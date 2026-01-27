@@ -1020,6 +1020,49 @@ void toggle_cockpit()
 int last_drawn_cockpit = -1;
 extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 
+static void cockpit_vr_adjust_rect(int *x, int *y, int *w, int *h)
+{
+#ifdef USE_OPENVR
+	if (!vr_openvr_active())
+		return;
+
+	float left = 0.0f;
+	float right = 0.0f;
+	float bottom = 0.0f;
+	float top = 0.0f;
+	float scale_x = 1.0f;
+	float scale_y = 1.0f;
+	const int eye = vr_openvr_current_eye();
+	if (eye >= 0 && vr_openvr_eye_projection(eye, &left, &right, &bottom, &top)) {
+		const float width = right - left;
+		const float height = top - bottom;
+		if (width != 0.0f)
+			scale_x = 2.0f / width;
+		if (height != 0.0f)
+			scale_y = 2.0f / height;
+	}
+
+	float offset_x = 0.0f;
+	float offset_y = 0.0f;
+	if (vr_openvr_eye_center_offset(&offset_x, &offset_y)) {
+		if (x)
+			*x += (int)((grd_curscreen->sc_w * 0.5f) * offset_x);
+		if (y)
+			*y += (int)((grd_curscreen->sc_h * 0.5f) * offset_y);
+	}
+
+	if (w)
+		*w = (int)((float)(*w) * scale_x);
+	if (h)
+		*h = (int)((float)(*h) * scale_y);
+#else
+	(void)x;
+	(void)y;
+	(void)w;
+	(void)h;
+#endif
+}
+
 // This actually renders the new cockpit onto the screen.
 void update_cockpits()
 {
@@ -1037,7 +1080,14 @@ void update_cockpits()
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (0, 0, -1, -1, bm, 255, F1_0);
+				{
+					int x = 0;
+					int y = 0;
+					int dw = grd_curscreen->sc_w;
+					int dh = grd_curscreen->sc_h;
+					cockpit_vr_adjust_rect(&x, &y, &dw, &dh);
+					ogl_ubitmapm_cs(x, y, dw, dh, bm, 255, F1_0);
+				}
 #else
 				gr_ubitmapm(0,0, bm);
 #endif
@@ -1046,7 +1096,14 @@ void update_cockpits()
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (0, 0, -1, -1, bm, 255, F1_0);
+				{
+					int x = 0;
+					int y = 0;
+					int dw = grd_curscreen->sc_w;
+					int dh = grd_curscreen->sc_h;
+					cockpit_vr_adjust_rect(&x, &y, &dw, &dh);
+					ogl_ubitmapm_cs(x, y, dw, dh, bm, 255, F1_0);
+				}
 #else
 				gr_ubitmapm(0,0, bm);
 #endif
@@ -1059,7 +1116,14 @@ void update_cockpits()
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (0, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
+				{
+					int x = 0;
+					int y = (HIRESMODE ? (SHEIGHT * 2) / 2.6 : (SHEIGHT * 2) / 2.72);
+					int dw = grd_curscreen->sc_w;
+					int dh = (int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5);
+					cockpit_vr_adjust_rect(&x, &y, &dw, &dh);
+					ogl_ubitmapm_cs(x, y, dw, dh, bm, 255, F1_0);
+				}
 #else
 				gr_ubitmapm(0,SHEIGHT-bm->bm_h,bm);
 #endif

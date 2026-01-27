@@ -527,6 +527,37 @@ int vr_openvr_current_eye(void)
 #endif
 }
 
+int vr_openvr_eye_center_offset(float *offset_x, float *offset_y)
+{
+#ifdef USE_OPENVR
+	if (!vr_openvr_active() || !vr_system || vr_current_eye < 0)
+		return 0;
+
+	float left = 0.0f;
+	float right = 0.0f;
+	float bottom = 0.0f;
+	float top = 0.0f;
+	if (!vr_openvr_eye_projection(vr_current_eye, &left, &right, &bottom, &top))
+		return 0;
+
+	const float width = right - left;
+	const float height = top - bottom;
+	const float offset = width != 0.0f ? -(right + left) / width : 0.0f;
+	const float offset_v = height != 0.0f ? -(top + bottom) / height : 0.0f;
+	if (offset_x)
+		*offset_x = offset;
+	if (offset_y)
+		*offset_y = offset_v;
+	return 1;
+#else
+	if (offset_x)
+		*offset_x = 0.0f;
+	if (offset_y)
+		*offset_y = 0.0f;
+	return 0;
+#endif
+}
+
 void vr_openvr_render_size(int *width, int *height)
 {
 #ifdef USE_OPENVR

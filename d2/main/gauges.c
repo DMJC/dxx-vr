@@ -57,6 +57,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
@@ -269,10 +272,76 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 // scaling gauges
 #ifdef OGL
-#define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) + 0.5))
-#define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) + 0.5))
-#define HUD_SCALE_X_AR(x)	(HUD_SCALE_X(100) > HUD_SCALE_Y(100) ? HUD_SCALE_Y(x) : HUD_SCALE_X(x))
-#define HUD_SCALE_Y_AR(y)	(HUD_SCALE_Y(100) > HUD_SCALE_X(100) ? HUD_SCALE_X(y) : HUD_SCALE_Y(y))
+static inline float hud_vr_scale_x(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active()) {
+		float left = 0.0f;
+		float right = 0.0f;
+		float bottom = 0.0f;
+		float top = 0.0f;
+		int eye = vr_openvr_current_eye();
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &left, &right, &bottom, &top)) {
+			const float width = right - left;
+			return width != 0.0f ? 2.0f / width : 1.0f;
+		}
+	}
+#endif
+	return 1.0f;
+}
+
+static inline float hud_vr_scale_y(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active()) {
+		float left = 0.0f;
+		float right = 0.0f;
+		float bottom = 0.0f;
+		float top = 0.0f;
+		int eye = vr_openvr_current_eye();
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &left, &right, &bottom, &top)) {
+			const float height = top - bottom;
+			return height != 0.0f ? 2.0f / height : 1.0f;
+		}
+	}
+#endif
+	return 1.0f;
+}
+
+static inline int hud_vr_offset_x(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active()) {
+		float offset_x = 0.0f;
+		float offset_y = 0.0f;
+		if (vr_openvr_eye_center_offset(&offset_x, &offset_y)) {
+			return (int)((grd_curscreen->sc_w * 0.5f) * offset_x);
+		}
+	}
+#endif
+	return 0;
+}
+
+static inline int hud_vr_offset_y(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active()) {
+		float offset_x = 0.0f;
+		float offset_y = 0.0f;
+		if (vr_openvr_eye_center_offset(&offset_x, &offset_y)) {
+			return (int)((grd_curscreen->sc_h * 0.5f) * offset_y);
+		}
+	}
+#endif
+	return 0;
+}
+
+#define HUD_SCALE_X_BASE(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) * hud_vr_scale_x() + 0.5))
+#define HUD_SCALE_Y_BASE(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) * hud_vr_scale_y() + 0.5))
+#define HUD_SCALE_X(x)		(HUD_SCALE_X_BASE(x) + hud_vr_offset_x())
+#define HUD_SCALE_Y(y)		(HUD_SCALE_Y_BASE(y) + hud_vr_offset_y())
+#define HUD_SCALE_X_AR(x)	(HUD_SCALE_X_BASE(100) > HUD_SCALE_Y_BASE(100) ? HUD_SCALE_Y_BASE(x) : HUD_SCALE_X_BASE(x))
+#define HUD_SCALE_Y_AR(y)	(HUD_SCALE_Y_BASE(100) > HUD_SCALE_X_BASE(100) ? HUD_SCALE_X_BASE(y) : HUD_SCALE_Y_BASE(y))
 #else
 #define HUD_SCALE_X(x)		(x)
 #define HUD_SCALE_Y(y)		(y)
