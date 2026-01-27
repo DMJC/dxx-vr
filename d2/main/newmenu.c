@@ -1457,7 +1457,17 @@ int newmenu_draw(window *wind, newmenu *menu)
 	int i;
 	int string_width, string_height, average_width;
 	int refresh_canvas = 0;
+#ifdef USE_OPENVR
+	const float vr_menu_scale = (vr_openvr_active() && Screen_mode == SCREEN_GAME) ? 0.5f : 0.8f;
+	const float saved_fnt_scale_x = FNTScaleX;
+	const float saved_fnt_scale_y = FNTScaleY;
 
+	if (vr_menu_scale != 1.0f)
+	{
+		FNTScaleX = saved_fnt_scale_x * vr_menu_scale;
+		FNTScaleY = saved_fnt_scale_y * vr_menu_scale;
+	}
+#endif
 	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
 	{
 		newmenu_create_structure ( menu );
@@ -1556,6 +1566,13 @@ int newmenu_draw(window *wind, newmenu *menu)
 		//vr_openvr_submit_mono_from_screen(1);
 		//vr_openvr_submit_mono_from_frontbuffer(1);
 #endif
+#endif
+#ifdef USE_OPENVR
+	if (vr_menu_scale != 1.0f)
+	{
+		FNTScaleX = saved_fnt_scale_x;
+		FNTScaleY = saved_fnt_scale_y;
+	}
 #endif
 	return 1;
 }
