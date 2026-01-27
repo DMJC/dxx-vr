@@ -273,72 +273,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SB_SECONDARY_BOX		(!HIRESMODE?3:7)
 
 // scaling gauges
-#ifdef USE_OPENVR
-static inline void hud_vr_scale(float *scale_x, float *scale_y)
-{
-	float sx = 1.0f;
-	float sy = 1.0f;
-
-	if (vr_openvr_active())
-	{
-		int vr_w = 0;
-		int vr_h = 0;
-
-		vr_openvr_render_size(&vr_w, &vr_h);
-		if (vr_w > 0 && vr_h > 0 && grd_curscreen->sc_w > 0 && grd_curscreen->sc_h > 0)
-		{
-			sx = (float)vr_w / (float)grd_curscreen->sc_w;
-			sy = (float)vr_h / (float)grd_curscreen->sc_h;
-		}
-	}
-
-	if (scale_x)
-		*scale_x = sx;
-	if (scale_y)
-		*scale_y = sy;
-}
-#else
-static inline void hud_vr_scale(float *scale_x, float *scale_y)
-{
-	if (scale_x)
-		*scale_x = 1.0f;
-	if (scale_y)
-		*scale_y = 1.0f;
-}
-#endif
-
-static inline float hud_vr_scale_x(void)
-{
-	float sx = 1.0f;
-	float sy = 1.0f;
-
-	hud_vr_scale(&sx, &sy);
-	return sx;
-}
-
-static inline float hud_vr_scale_y(void)
-{
-	float sx = 1.0f;
-	float sy = 1.0f;
-
-	hud_vr_scale(&sx, &sy);
-	return sy;
-}
-
-static inline void hud_vr_scaled_canvas(int *width, int *height)
-{
-	const float sx = hud_vr_scale_x();
-	const float sy = hud_vr_scale_y();
-
-	if (width)
-		*width = (int)lroundf((float)grd_curcanv->cv_bitmap.bm_w * sx);
-	if (height)
-		*height = (int)lroundf((float)grd_curcanv->cv_bitmap.bm_h * sy);
-}
-
 #ifdef OGL
-#define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) * hud_vr_scale_x() + 0.5))
-#define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) * hud_vr_scale_y() + 0.5))
+#define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) + 0.5))
+#define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) + 0.5))
 #define HUD_SCALE_X_AR(x)	(HUD_SCALE_X(100) > HUD_SCALE_Y(100) ? HUD_SCALE_Y(x) : HUD_SCALE_X(x))
 #define HUD_SCALE_Y_AR(y)	(HUD_SCALE_Y(100) > HUD_SCALE_X(100) ? HUD_SCALE_X(y) : HUD_SCALE_Y(y))
 #else
@@ -390,21 +327,16 @@ static void cockpit_gauge_offset(int *x, int *y)
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
-		float scale_x = 1.0f;
-		float scale_y = 1.0f;
-
-		hud_vr_scale(&scale_x, &scale_y);
-
 		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
 		{
-			const float width = (float)grd_curcanv->cv_bitmap.bm_w * scale_x;
-			const float height = (float)grd_curcanv->cv_bitmap.bm_h * scale_y;
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
 			const float x_ndc = (r + l) / (r - l);
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (int)lroundf(width * 0.5f);
-			offset_y = center_y - (int)lroundf(height * 0.5f);
+			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
+			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
 		}
 	}
 #endif
@@ -803,9 +735,6 @@ void hud_show_score()
 {
 	char	score_str[20];
 	int	w, h, aw;
-	int offset_x = 0;
-	int offset_y = 0;
-	int canvas_w = grd_curcanv->cv_bitmap.bm_w;
 
 	int pnum = get_pnum_for_hud();
 
@@ -826,12 +755,7 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-#ifdef USE_OPENVR
-	cockpit_gauge_offset(&offset_x, &offset_y);
-	hud_vr_scaled_canvas(&canvas_w, NULL);
-#endif
-
-	gr_string(canvas_w - w - FSPACX(1) + offset_x, FSPACY(1) + offset_y, score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
 }
 
 void hud_show_timer_count()
@@ -1152,22 +1076,25 @@ void hud_show_flag(void)
 void hud_show_energy(void)
 {
 	int pnum = get_pnum_for_hud();
-	int offset_x = 0;
-	int offset_y = 0;
-	int canvas_h = grd_curcanv->cv_bitmap.bm_h;
 
 	if (PlayerCfg.HudMode<2) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
-		cockpit_gauge_offset(&offset_x, &offset_y);
-		hud_vr_scaled_canvas(NULL, &canvas_h);
+        int offset_x = 0;
+        int offset_y = 0;
+
+        cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
 		if (Game_mode & GM_MULTI)
-			gr_printf(FSPACX(1) + offset_x, (canvas_h - (LINE_SPACING * 5)) + offset_y, "%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+#ifdef USE_OPENVR
+		     gr_printf(FSPACX(1) + offset_x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)) + offset_y,"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+#else
+		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+#endif
 		else
-			gr_printf(FSPACX(1) + offset_x, (canvas_h - LINE_SPACING) + offset_y, "%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 	}
 
 	if (Newdemo_state == ND_STATE_RECORDING)
@@ -1178,9 +1105,6 @@ void hud_show_afterburner(void)
 {
 	int y;
 	int pnum = get_pnum_for_hud();
-	int offset_x = 0;
-	int offset_y = 0;
-	int canvas_h = grd_curcanv->cv_bitmap.bm_h;
 
 	if (! (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER))
 		return;		//don't draw if don't have
@@ -1190,12 +1114,7 @@ void hud_show_afterburner(void)
 
 	y = (Game_mode & GM_MULTI)?(-7*LINE_SPACING):(-3*LINE_SPACING);
 
-#ifdef USE_OPENVR
-	cockpit_gauge_offset(&offset_x, &offset_y);
-	hud_vr_scaled_canvas(NULL, &canvas_h);
-#endif
-
-	gr_printf(FSPACX(1) + offset_x, canvas_h + y + offset_y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
+	gr_printf(FSPACX(1), grd_curcanv->cv_bitmap.bm_h+y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
 
 	if (Newdemo_state==ND_STATE_RECORDING )
 		newdemo_record_player_afterburner(Players[pnum].afterburner_charge);
@@ -2089,11 +2008,8 @@ void draw_numerical_display(int shield, int energy)
 #ifdef USE_OPENVR
         int offset_x = 0;
         int offset_y = 0;
-		float scale_x = 1.0f;
-		float scale_y = 1.0f;
 
         cockpit_gauge_offset(&offset_x, &offset_y);
-		hud_vr_scale(&scale_x, &scale_y);
 #endif
 	gr_set_curfont( GAME_FONT );
 #ifndef OGL
@@ -2105,8 +2021,8 @@ void draw_numerical_display(int shield, int energy)
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
 #ifdef USE_OPENVR
-	gr_printf(	((grd_curscreen->sc_w * scale_x) / 1.951f)-(sw/2) + offset_x,
-			((grd_curscreen->sc_h * scale_y) / 1.365f) + offset_y,"%d",shield);
+	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2) + offset_x,
+			(grd_curscreen->sc_h/1.365),"%d",shield) + offset_y;
 #else
 	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2),
 			(grd_curscreen->sc_h/1.365),"%d",shield);
@@ -2115,8 +2031,8 @@ void draw_numerical_display(int shield, int energy)
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
 #ifdef USE_OPENVR
-	gr_printf(	((grd_curscreen->sc_w * scale_x) / 1.951f)-(ew/2) + offset_x,
-			((grd_curscreen->sc_h * scale_y) / 1.5f) + offset_y,"%d",energy);
+	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2) + offset_x,
+			(grd_curscreen->sc_h/1.5),"%d",energy) + offset_y;
 #else
 	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2),
 			(grd_curscreen->sc_h/1.5),"%d",energy);
@@ -2499,7 +2415,7 @@ void sb_draw_energy_bar(int energy)
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
 #ifdef USE_OPENVR
-	gr_printf(((grd_curscreen->sc_w * scale_x) / 3.0f)-(ew/2) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y, "%d", energy);
+	gr_printf((grd_curscreen->sc_w/3)-(ew/2) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y, "%d", energy);
 #else
 	gr_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)),"%d",energy);
 #endif
@@ -2519,17 +2435,17 @@ void sb_draw_afterburner()
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 
-	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
-#else
 	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y), &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
+#else
+	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
 #endif
 	erase_height = HUD_SCALE_Y(fixmul((f1_0 - Players[pnum].afterburner_charge),SB_AFTERBURNER_GAUGE_H-1));
 	gr_setcolor( 0 );
 	for (i=0;i<erase_height;i++)
 #ifdef USE_OPENVR
-		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W)) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y) );
-#else
 		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1)), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W))), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i) );
+#else
+		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W)) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y) );
 #endif
 	//draw legend
 	if (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER)
@@ -2539,9 +2455,9 @@ void sb_draw_afterburner()
 
 	gr_get_string_size(ab_str, &w, &h, &aw );
 #ifdef USE_OPENVR
-	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))) + offset_y, "AB");
-#else
 	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))), "AB");
+#else
+	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))) + offset_y, "AB");
 #endif
 	gr_set_current_canvas(NULL);
 }
@@ -2553,17 +2469,15 @@ void sb_draw_shield_num(int shield)
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
-	float scale_x = 1.0f;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	hud_vr_scale(&scale_x, NULL);
 #endif
 	gr_set_curfont( GAME_FONT );
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
 #ifdef USE_OPENVR
-	gr_printf(((grd_curscreen->sc_w * scale_x) / 2.266f)-(sw/2) + offset_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y) + offset_y, "%d", shield);
+	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2) + offset_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y) + offset_y, "%d", shield);
 #else
 	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2), HUD_SCALE_Y(SB_SHIELD_NUM_Y), "%d", shield);
 #endif
