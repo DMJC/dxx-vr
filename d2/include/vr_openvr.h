@@ -19,6 +19,7 @@ void vr_openvr_adjust_eye_offset(float delta_meters);
 int vr_openvr_eye_projection(int eye, float *left, float *right, float *bottom, float *top);
 int vr_openvr_head_pose(vms_matrix *orient, vms_vector *position);
 int vr_openvr_current_eye(void);
+int vr_openvr_eye_center_offset(float *offset_x, float *offset_y);
 void vr_openvr_render_size(int *width, int *height);
 void vr_openvr_bind_eye(int eye);
 void vr_openvr_unbind_eye(void);
