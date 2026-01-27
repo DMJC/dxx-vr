@@ -156,7 +156,7 @@ int hide_menus(void)
 void show_menus(void)
 {
 	int i;
-
+	set_screen_mode(SCREEN_MENU);
 	for (i = 0; (i < 16) && menus[i]; i++)
 		if (window_exists(menus[i]))
 			window_set_visible(menus[i], 1);

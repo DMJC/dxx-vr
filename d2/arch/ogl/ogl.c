@@ -103,6 +103,7 @@ extern int linedotscale;
 
 #define OGL_BINDTEXTURE(a) glBindTexture(GL_TEXTURE_2D, a);
 
+extern int Automap_active;
 
 ogl_texture ogl_texture_list[OGL_TEXTURE_LIST_SIZE];
 int ogl_texture_list_cur;
