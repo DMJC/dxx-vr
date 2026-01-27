@@ -273,9 +273,72 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SB_SECONDARY_BOX		(!HIRESMODE?3:7)
 
 // scaling gauges
+#ifdef USE_OPENVR
+static inline void hud_vr_scale(float *scale_x, float *scale_y)
+{
+	float sx = 1.0f;
+	float sy = 1.0f;
+
+	if (vr_openvr_active())
+	{
+		int vr_w = 0;
+		int vr_h = 0;
+
+		vr_openvr_render_size(&vr_w, &vr_h);
+		if (vr_w > 0 && vr_h > 0 && grd_curscreen->sc_w > 0 && grd_curscreen->sc_h > 0)
+		{
+			sx = (float)vr_w / (float)grd_curscreen->sc_w;
+			sy = (float)vr_h / (float)grd_curscreen->sc_h;
+		}
+	}
+
+	if (scale_x)
+		*scale_x = sx;
+	if (scale_y)
+		*scale_y = sy;
+}
+#else
+static inline void hud_vr_scale(float *scale_x, float *scale_y)
+{
+	if (scale_x)
+		*scale_x = 1.0f;
+	if (scale_y)
+		*scale_y = 1.0f;
+}
+#endif
+
+static inline float hud_vr_scale_x(void)
+{
+	float sx = 1.0f;
+	float sy = 1.0f;
+
+	hud_vr_scale(&sx, &sy);
+	return sx;
+}
+
+static inline float hud_vr_scale_y(void)
+{
+	float sx = 1.0f;
+	float sy = 1.0f;
+
+	hud_vr_scale(&sx, &sy);
+	return sy;
+}
+
+static inline void hud_vr_scaled_canvas(int *width, int *height)
+{
+	const float sx = hud_vr_scale_x();
+	const float sy = hud_vr_scale_y();
+
+	if (width)
+		*width = (int)lroundf((float)grd_curcanv->cv_bitmap.bm_w * sx);
+	if (height)
+		*height = (int)lroundf((float)grd_curcanv->cv_bitmap.bm_h * sy);
+}
+
 #ifdef OGL
-#define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) + 0.5))
-#define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) + 0.5))
+#define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) * hud_vr_scale_x() + 0.5))
+#define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) * hud_vr_scale_y() + 0.5))
 #define HUD_SCALE_X_AR(x)	(HUD_SCALE_X(100) > HUD_SCALE_Y(100) ? HUD_SCALE_Y(x) : HUD_SCALE_X(x))
 #define HUD_SCALE_Y_AR(y)	(HUD_SCALE_Y(100) > HUD_SCALE_X(100) ? HUD_SCALE_X(y) : HUD_SCALE_Y(y))
 #else
@@ -327,16 +390,21 @@ static void cockpit_gauge_offset(int *x, int *y)
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
+		float scale_x = 1.0f;
+		float scale_y = 1.0f;
+
+		hud_vr_scale(&scale_x, &scale_y);
+
 		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
 		{
-			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
-			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w * scale_x;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h * scale_y;
 			const float x_ndc = (r + l) / (r - l);
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
-			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
+			offset_x = center_x - (int)lroundf(width * 0.5f);
+			offset_y = center_y - (int)lroundf(height * 0.5f);
 		}
 	}
 #endif
@@ -344,6 +412,21 @@ static void cockpit_gauge_offset(int *x, int *y)
 	*x = offset_x;
 	*y = offset_y;
 }
+
+#ifdef USE_OPENVR
+#define HUD_GR_PRINTF(x, y, ...) \
+	do { \
+		int offset_x = 0; \
+		int offset_y = 0; \
+		float scale_x = 1.0f; \
+		float scale_y = 1.0f; \
+		cockpit_gauge_offset(&offset_x, &offset_y); \
+		hud_vr_scale(&scale_x, &scale_y); \
+		gr_printf((int)lroundf((x) * scale_x) + offset_x, (int)lroundf((y) * scale_y) + offset_y, __VA_ARGS__); \
+	} while (0)
+#else
+#define HUD_GR_PRINTF(x, y, ...) gr_printf((x), (y), __VA_ARGS__)
+#endif
 
 void draw_ammo_info(int x,int y,int ammo_count,int primary);
 
@@ -735,6 +818,9 @@ void hud_show_score()
 {
 	char	score_str[20];
 	int	w, h, aw;
+	int offset_x = 0;
+	int offset_y = 0;
+	int canvas_w = grd_curcanv->cv_bitmap.bm_w;
 
 	int pnum = get_pnum_for_hud();
 
@@ -755,7 +841,12 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
+#ifdef USE_OPENVR
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	hud_vr_scaled_canvas(&canvas_w, NULL);
+#endif
+
+	gr_string(canvas_w - w - FSPACX(1) + offset_x, FSPACY(1) + offset_y, score_str);
 }
 
 void hud_show_timer_count()
@@ -839,9 +930,9 @@ void sb_show_score()
 	gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
-		gr_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_KILLS);
+		HUD_GR_PRINTF(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_KILLS);
 	else
-		gr_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_SCORE);
+		HUD_GR_PRINTF(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_SCORE);
 
 	gr_set_curfont( GAME_FONT );
 	if ( (Game_mode & GM_MULTI) && !( (Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS) ) )
@@ -1035,7 +1126,7 @@ void hud_show_orbs (void)
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
 		hud_bitblt_free(x,y,HUD_SCALE_Y_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(x+HUD_SCALE_X_AR(bm->bm_w), y, " x %d", Players[pnum].secondary_ammo[PROXIMITY_INDEX]);
+		HUD_GR_PRINTF(x+HUD_SCALE_X_AR(bm->bm_w), y, " x %d", Players[pnum].secondary_ammo[PROXIMITY_INDEX]);
 	}
 }
 
@@ -1076,25 +1167,19 @@ void hud_show_flag(void)
 void hud_show_energy(void)
 {
 	int pnum = get_pnum_for_hud();
+	int canvas_h = grd_curcanv->cv_bitmap.bm_h;
 
 	if (PlayerCfg.HudMode<2) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+		hud_vr_scaled_canvas(NULL, &canvas_h);
 #endif
 
 		if (Game_mode & GM_MULTI)
-#ifdef USE_OPENVR
-		     gr_printf(FSPACX(1) + offset_x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)) + offset_y,"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
-#else
-		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
-#endif
+			HUD_GR_PRINTF(FSPACX(1), (canvas_h - (LINE_SPACING * 5)), "%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 		else
-		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+			HUD_GR_PRINTF(FSPACX(1), (canvas_h - LINE_SPACING), "%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 	}
 
 	if (Newdemo_state == ND_STATE_RECORDING)
@@ -1105,6 +1190,7 @@ void hud_show_afterburner(void)
 {
 	int y;
 	int pnum = get_pnum_for_hud();
+	int canvas_h = grd_curcanv->cv_bitmap.bm_h;
 
 	if (! (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER))
 		return;		//don't draw if don't have
@@ -1114,7 +1200,11 @@ void hud_show_afterburner(void)
 
 	y = (Game_mode & GM_MULTI)?(-7*LINE_SPACING):(-3*LINE_SPACING);
 
-	gr_printf(FSPACX(1), grd_curcanv->cv_bitmap.bm_h+y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
+#ifdef USE_OPENVR
+	hud_vr_scaled_canvas(NULL, &canvas_h);
+#endif
+
+	HUD_GR_PRINTF(FSPACX(1), canvas_h + y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
 
 	if (Newdemo_state==ND_STATE_RECORDING )
 		newdemo_record_player_afterburner(Players[pnum].afterburner_charge);
@@ -1224,7 +1314,7 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 				x-=w+FSPACX(3);
 			gr_string(x, y, weapon_str);
 			if (i == 1 && Players[pnum].primary_weapon == i && PlayerCfg.CurrentCockpitMode==CM_FULL_SCREEN)
-				gr_printf(x,y-(LINE_SPACING*1),"V:%i",f2i((unsigned int)Players[pnum].primary_ammo[1] * VULCAN_AMMO_SCALE));
+				HUD_GR_PRINTF(x,y-(LINE_SPACING*1),"V:%i",f2i((unsigned int)Players[pnum].primary_ammo[1] * VULCAN_AMMO_SCALE));
 		}
 	} else {
 		for (i=4;i>=0;i--){
@@ -1300,7 +1390,7 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 			gr_string(x, y, weapon_str);
 
 			if (i == 6 && Players[pnum].primary_weapon == i && PlayerCfg.CurrentCockpitMode==CM_FULL_SCREEN)
-				gr_printf(x+FSPACX(9),y-(LINE_SPACING*2),"G:%i",f2i((unsigned int)Players[pnum].primary_ammo[1] * VULCAN_AMMO_SCALE));
+				HUD_GR_PRINTF(x+FSPACX(9),y-(LINE_SPACING*2),"G:%i",f2i((unsigned int)Players[pnum].primary_ammo[1] * VULCAN_AMMO_SCALE));
 
 			// Deal with vulcan ammo uniformly here
 			if (i == 6) {
@@ -1377,9 +1467,9 @@ void hud_show_weapons(void)
 		hud_show_weapons_mode(0,1,x1,y);
 		hud_show_weapons_mode(1,1,x2,y);
 		gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
-		gr_printf(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
+		HUD_GR_PRINTF(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
 		gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
-		gr_printf(x1, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].energy));
+		HUD_GR_PRINTF(x1, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].energy));
 	}
 	else
 	{
@@ -1452,7 +1542,7 @@ void hud_show_cloak_invuln(void)
 
 		if (Players[pnum].cloak_time+CLOAK_TIME_MAX-GameTime64 > F1_0*3 || GameTime64 & 0x8000)
 		{
-			gr_printf(FSPACX(1), y, "%s", TXT_CLOAKED);
+			HUD_GR_PRINTF(FSPACX(1), y, "%s", TXT_CLOAKED);
 		}
 	}
 
@@ -1467,7 +1557,7 @@ void hud_show_cloak_invuln(void)
 
 			if (Players[pnum].invulnerable_time+INVULNERABLE_TIME_MAX-GameTime64 > F1_0*4 || GameTime64 & 0x8000)
 			{
-				gr_printf(FSPACX(1), y, "%s", TXT_INVULNERABLE);
+				HUD_GR_PRINTF(FSPACX(1), y, "%s", TXT_INVULNERABLE);
 			}
 		}
 	}
@@ -1483,14 +1573,14 @@ void hud_show_shield(void)
 
 		if ( Players[pnum].shields >= 0 )	{
 			if (Game_mode & GM_MULTI)
-			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+			     HUD_GR_PRINTF(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 			else
-			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+			     HUD_GR_PRINTF(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 		} else {
 			if (Game_mode & GM_MULTI)
-			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
+			     HUD_GR_PRINTF(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
 			else
-			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
+			     HUD_GR_PRINTF(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
 		}
 	}
 
@@ -1516,7 +1606,7 @@ void hud_show_lives()
 	if (Game_mode & GM_MULTI) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-		gr_printf(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		HUD_GR_PRINTF(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 	}
 	else if (Players[pnum].lives > 1)  {
 		PAGE_IN_GAUGE( GAUGE_LIVES );
@@ -1524,7 +1614,7 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
+		HUD_GR_PRINTF(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
 	}
 
 }
@@ -1542,9 +1632,9 @@ void sb_show_lives()
 	gr_set_curfont( GAME_FONT );
 	gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 	if (Game_mode & GM_MULTI)
-		gr_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_DEATHS);
+		HUD_GR_PRINTF(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_DEATHS);
 	else
-		gr_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_LIVES);
+		HUD_GR_PRINTF(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_LIVES);
 
 	if (Game_mode & GM_MULTI)
 	{
@@ -1573,7 +1663,7 @@ void sb_show_lives()
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 		PAGE_IN_GAUGE( GAUGE_LIVES );
 		hud_bitblt_free(HUD_SCALE_X(x),HUD_SCALE_Y(y),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y(y), " x %d", Players[pnum].lives-1);
+		HUD_GR_PRINTF(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y(y), " x %d", Players[pnum].lives-1);
 	}
 }
 
@@ -1592,7 +1682,7 @@ void show_time()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1 );
 
-	gr_printf(SWIDTH-FSPACX(30),GHEIGHT-(LINE_SPACING*11),"%d:%02d", mins, secs);
+	HUD_GR_PRINTF(SWIDTH-FSPACX(30),GHEIGHT-(LINE_SPACING*11),"%d:%02d", mins, secs);
 }
 #endif
 
@@ -2005,11 +2095,10 @@ void draw_player_ship(int cloak_state,int x, int y)
 void draw_numerical_display(int shield, int energy)
 {
 	int sw,sh,saw,ew,eh,eaw;
+	float scale_x = 1.0f;
+	float scale_y = 1.0f;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+		hud_vr_scale(&scale_x, &scale_y);
 #endif
 	gr_set_curfont( GAME_FONT );
 #ifndef OGL
@@ -2020,23 +2109,13 @@ void draw_numerical_display(int shield, int energy)
 	// gr_get_string_size is used so we can get the numbers finally in the correct position with sw and ew
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
-#ifdef USE_OPENVR
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2) + offset_x,
-			(grd_curscreen->sc_h/1.365),"%d",shield) + offset_y;
-#else
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2),
-			(grd_curscreen->sc_h/1.365),"%d",shield);
-#endif
+	HUD_GR_PRINTF(	((grd_curscreen->sc_w * scale_x) / 1.951f)-(sw/2),
+			((grd_curscreen->sc_h * scale_y) / 1.365f),"%d",shield);
 
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
-#ifdef USE_OPENVR
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2) + offset_x,
-			(grd_curscreen->sc_h/1.5),"%d",energy) + offset_y;
-#else
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2),
-			(grd_curscreen->sc_h/1.5),"%d",energy);
-#endif
+	HUD_GR_PRINTF(	((grd_curscreen->sc_w * scale_x) / 1.951f)-(ew/2),
+			((grd_curscreen->sc_h * scale_y) / 1.5f),"%d",energy);
 	gr_set_current_canvas( NULL );
 }
 
@@ -2147,11 +2226,7 @@ void draw_weapon_info_sub(int info_index,gauge_box *box,int pic_x,int pic_y,char
 		//	For laser, show level and quadness
 		if (info_index == LASER_ID || info_index == SUPER_LASER_ID)
 		{
-#ifdef USE_OPENVR
-			gr_printf(text_x + offset_x, text_y + offset_y + LINE_SPACING, "%s: %i", TXT_LVL, Players[pnum].laser_level+1);
-#else
-			gr_printf(text_x,text_y+LINE_SPACING, "%s: %i", TXT_LVL, Players[pnum].laser_level+1);
-#endif
+			HUD_GR_PRINTF(text_x, text_y + LINE_SPACING, "%s: %i", TXT_LVL, Players[pnum].laser_level+1);
 			if (Players[pnum].flags & PLAYER_FLAGS_QUAD_LASERS)
 #ifdef USE_OPENVR
 				gr_string(text_x + offset_x, text_y + offset_y + (LINE_SPACING*2), TXT_QUAD);
@@ -2220,7 +2295,7 @@ void draw_ammo_info(int x,int y,int ammo_count,int primary)
 	{
 		gr_setcolor(BM_XRGB(0,0,0));
 		gr_set_fontcolor(BM_XRGB(20,0,0),-1 );
-		gr_printf(x,y,"%03d",ammo_count);
+		HUD_GR_PRINTF(x,y,"%03d",ammo_count);
 	}
 }
 
@@ -2389,6 +2464,7 @@ void sb_draw_energy_bar(int energy)
 {
 	int erase_height;
 	int ew, eh, eaw;
+	float scale_x = 1.0f;
 
 	PAGE_IN_GAUGE( SB_GAUGE_ENERGY );
 #ifdef USE_OPENVR
@@ -2396,6 +2472,7 @@ void sb_draw_energy_bar(int energy)
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
+	hud_vr_scale(&scale_x, NULL);
 
 	hud_bitblt(HUD_SCALE_X(SB_ENERGY_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_ENERGY)]);
 #else
@@ -2414,11 +2491,7 @@ void sb_draw_energy_bar(int energy)
 	//draw numbers
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
-#ifdef USE_OPENVR
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y, "%d", energy);
-#else
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)),"%d",energy);
-#endif
+	HUD_GR_PRINTF(((grd_curscreen->sc_w * scale_x) / 3.0f)-(ew/2), HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)), "%d", energy);
 	gr_set_current_canvas(NULL);
 }
 
@@ -2435,17 +2508,17 @@ void sb_draw_afterburner()
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 
-	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y), &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
-#else
 	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
+#else
+	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y), &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
 #endif
 	erase_height = HUD_SCALE_Y(fixmul((f1_0 - Players[pnum].afterburner_charge),SB_AFTERBURNER_GAUGE_H-1));
 	gr_setcolor( 0 );
 	for (i=0;i<erase_height;i++)
 #ifdef USE_OPENVR
-		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1)), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W))), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i) );
-#else
 		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W)) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y) );
+#else
+		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1)), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W))), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i) );
 #endif
 	//draw legend
 	if (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER)
@@ -2454,11 +2527,7 @@ void sb_draw_afterburner()
 		gr_set_fontcolor(BM_XRGB(12,12,12),-1 );
 
 	gr_get_string_size(ab_str, &w, &h, &aw );
-#ifdef USE_OPENVR
-	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))), "AB");
-#else
-	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))) + offset_y, "AB");
-#endif
+	HUD_GR_PRINTF(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))), "AB");
 	gr_set_current_canvas(NULL);
 }
 
@@ -2466,21 +2535,15 @@ void sb_draw_shield_num(int shield)
 {
 	//draw numbers
 	int sw, sh, saw;
+	float scale_x = 1.0f;
 #ifdef USE_OPENVR
-	int offset_x = 0;
-	int offset_y = 0;
-
-	cockpit_gauge_offset(&offset_x, &offset_y);
+	hud_vr_scale(&scale_x, NULL);
 #endif
 	gr_set_curfont( GAME_FONT );
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
-#ifdef USE_OPENVR
-	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2) + offset_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y) + offset_y, "%d", shield);
-#else
-	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2), HUD_SCALE_Y(SB_SHIELD_NUM_Y), "%d", shield);
-#endif
+	HUD_GR_PRINTF(((grd_curscreen->sc_w * scale_x) / 2.266f)-(sw/2), HUD_SCALE_Y(SB_SHIELD_NUM_Y), "%d", shield);
 }
 
 void sb_draw_shield_bar(int shield)
@@ -2961,7 +3024,7 @@ void hud_show_kill_list()
 			name[strlen(name)-1]=0;
 			gr_get_string_size(name,&sw,&sh,&aw);
 		}
-		gr_printf(x0,y,"%s",name);
+		HUD_GR_PRINTF(x0,y,"%s",name);
 
 		if (Show_kill_list == 3 || Players[player_num].connected == CONNECT_PLAYING) {
 			if (Game_mode & GM_TEAM) {
@@ -2978,25 +3041,25 @@ void hud_show_kill_list()
 			if (Players[player_num].net_killed_total+Players[player_num].net_kills_total==0)
 				gr_string (x1,y,"NA");
 			else
-				gr_printf (x1,y,"%d%%",(int)((float)((float)Players[player_num].net_kills_total/((float)Players[player_num].net_killed_total+(float)Players[player_num].net_kills_total))*100.0));
+				HUD_GR_PRINTF(x1,y,"%d%%",(int)((float)((float)Players[player_num].net_kills_total/((float)Players[player_num].net_killed_total+(float)Players[player_num].net_kills_total))*100.0));
 		}
 		else if (Show_kill_list == 3) {
 			if (Netgame.PlayTimeAllowed || Netgame.KillGoal)
-				gr_printf(x1,y,"%3d(%d)",team_kills[i],Netgame.TeamKillGoalCount[i]);
+				HUD_GR_PRINTF(x1,y,"%3d(%d)",team_kills[i],Netgame.TeamKillGoalCount[i]);
 			else
-				gr_printf(x1,y,"%3d",team_kills[i]);
+				HUD_GR_PRINTF(x1,y,"%3d",team_kills[i]);
 
 
 		} else if ((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS) )
-			gr_printf(x1,y,"%-6d",Players[player_num].score);
+			HUD_GR_PRINTF(x1,y,"%-6d",Players[player_num].score);
 
 		else {
 
 
 			if (Netgame.PlayTimeAllowed || Netgame.KillGoal)
-				gr_printf(x1,y,"%3d(%d)",Players[player_num].net_kills_total,Players[player_num].KillGoalCount);
+				HUD_GR_PRINTF(x1,y,"%3d(%d)",Players[player_num].net_kills_total,Players[player_num].KillGoalCount);
 			else
-				gr_printf(x1,y,"%3d",Players[player_num].net_kills_total);
+				HUD_GR_PRINTF(x1,y,"%3d",Players[player_num].net_kills_total);
 
 		}
 
@@ -3023,7 +3086,7 @@ void hud_show_kill_list()
 					fontcolor_good();
 				}
 
-				gr_printf(lagx,y,"% 3d", lag);
+				HUD_GR_PRINTF(lagx,y,"% 3d", lag);
 			}
 
 			int loss_down = Netgame.players[i].loss;
@@ -3037,7 +3100,7 @@ void hud_show_kill_list()
 				}
 
 				if(loss_up > 0 || loss_down > 0) {
-					gr_printf(loss_upx,y,"% 3d%%", loss_up);
+					HUD_GR_PRINTF(loss_upx,y,"% 3d%%", loss_up);
 				}
 			}
 
@@ -3048,16 +3111,16 @@ void hud_show_kill_list()
 			}
 
 			if(loss_up > 0 || loss_down > 0) {
-				gr_printf(loss_downx,y,"% 3d%%", loss_down);
+				HUD_GR_PRINTF(loss_downx,y,"% 3d%%", loss_down);
 			}
 
 			if(connection_statuses[player_num].type == CONNT_PROXY) {
 				fontcolor_bad();
 
 				if(loss_up > 0 || loss_down > 0) {
-					gr_printf(cnxx + FSPACX(5), y,"P");
+					HUD_GR_PRINTF(cnxx + FSPACX(5), y,"P");
 				} else {
-					gr_printf(loss_upx,y,"P");
+					HUD_GR_PRINTF(loss_upx,y,"P");
 				}
 			}
 
@@ -3146,7 +3209,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 
 	gr_get_string_size(Players[pnum].callsign, &sw, &sh, &saw);
 
-	gr_printf(x + OBS_PLAYER_CARD_WIDTH / 2 - sw / 2, y, "%s", Players[pnum].callsign);
+	HUD_GR_PRINTF(x + OBS_PLAYER_CARD_WIDTH / 2 - sw / 2, y, "%s", Players[pnum].callsign);
 
 	y += sh + 3;
 
@@ -3162,7 +3225,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 
 		gr_get_string_size(score, &sw, &sh, &saw);
 
-		gr_printf(x + OBS_PLAYER_CARD_WIDTH / 2 - sw / 2, y, "%s", score);
+		HUD_GR_PRINTF(x + OBS_PLAYER_CARD_WIDTH / 2 - sw / 2, y, "%s", score);
 
 		y += sh + 3;
 	}
@@ -3173,7 +3236,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 
 		gr_get_string_size(score, &sw, &sh, &saw);
 
-		gr_printf(x + OBS_PLAYER_CARD_WIDTH - sw - 3, y, "%s", score);
+		HUD_GR_PRINTF(x + OBS_PLAYER_CARD_WIDTH - sw - 3, y, "%s", score);
 
         y += (sh * 0.72) + 1; // string height slightly misleading in this font
 	}
@@ -3197,7 +3260,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 				y -= sh + 1;
 			}
 
-			gr_printf(x + 3, y, "%s", shields);
+			HUD_GR_PRINTF(x + 3, y, "%s", shields);
 
 			y += sh + 1;
 		}
@@ -3335,7 +3398,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 			y += 2;
 
 			gr_set_fontcolor(color, -1);
-			gr_printf(x + 3, y, "%s", primary);
+			HUD_GR_PRINTF(x + 3, y, "%s", primary);
 
 			// Primary ammo
 			char primary_ammo[7];
@@ -3352,7 +3415,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 			}
 
 			gr_get_string_size(primary_ammo, &sw, &sh, &saw);
-			gr_printf(x + OBS_PLAYER_CARD_WIDTH - 1 - sw, y, primary_ammo);
+			HUD_GR_PRINTF(x + OBS_PLAYER_CARD_WIDTH - 1 - sw, y, primary_ammo);
 
 			y += sh + 1;
 		}
@@ -3396,7 +3459,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 			y += 2;
 
 			gr_set_fontcolor(color, -1);
-			gr_printf(x + 3, y, "%s", secondary);
+			HUD_GR_PRINTF(x + 3, y, "%s", secondary);
 
 			// Secondary ammo
 			char secondary_ammo[3];
@@ -3404,7 +3467,7 @@ int observer_draw_player_card(int pnum, int color, int x, int y) {
 				Players[pnum].secondary_ammo[Players[pnum].secondary_weapon]);
 
 			gr_get_string_size(secondary_ammo, &sw, &sh, &saw);
-			gr_printf(x + OBS_PLAYER_CARD_WIDTH - 1 - sw, y, secondary_ammo);
+			HUD_GR_PRINTF(x + OBS_PLAYER_CARD_WIDTH - 1 - sw, y, secondary_ammo);
 
 			y += sh + 1;
 		}
@@ -3749,7 +3812,7 @@ void observer_maybe_show_kill_graph() {
 				snprintf(score, sizeof(score) / sizeof(score[0]), "%i", i);
 				gr_get_string_size(score, &sw, &sh, &aw);
 				gr_set_fontcolor(BM_XRGB(31, 31, 31), -1);
-				gr_printf(gridminx - sw, y - sh / 2, "%s", score);
+				HUD_GR_PRINTF(gridminx - sw, y - sh / 2, "%s", score);
 				gr_setcolor(BM_XRGB(12, 12, 12));
 				gr_line(i2f(gridminx), i2f(y), i2f(gridmaxx), i2f(y));
 			}
@@ -3760,7 +3823,7 @@ void observer_maybe_show_kill_graph() {
 					snprintf(time, sizeof(time) / sizeof(time[0]), "%i", i / 60);
 					gr_get_string_size(time, &sw, &sh, &aw);
 					gr_set_fontcolor(BM_XRGB(31, 31, 31), -1);
-					gr_printf(x - sw / 2, gridminy + 1, "%s", time);
+					HUD_GR_PRINTF(x - sw / 2, gridminy + 1, "%s", time);
 				}
 				gr_setcolor(BM_XRGB(12, 12, 12));
 			}
@@ -3996,14 +4059,14 @@ int maybe_show_observers(int startY) {
 	gr_get_string_size("Observers:", &w, &h, &aw);
 	x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
-	gr_printf(x, y, "Observers:");
+	HUD_GR_PRINTF(x, y, "Observers:");
 	y += LINE_SPACING;
 
 	if (Netgame.host_is_obs) {
 		gr_get_string_size(Players[0].callsign, &w, &h, &aw);
 		x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
-		gr_printf(x, y, "%s", Players[0].callsign);
+		HUD_GR_PRINTF(x, y, "%s", Players[0].callsign);
 		y += LINE_SPACING;
 	}
 
@@ -4015,7 +4078,7 @@ int maybe_show_observers(int startY) {
 		gr_get_string_size(Netgame.observers[i].callsign, &w, &h, &aw);
 		x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
-		gr_printf(x, y, "%s", Netgame.observers[i].callsign);
+		HUD_GR_PRINTF(x, y, "%s", Netgame.observers[i].callsign);
 		y += LINE_SPACING;
 	}
 
@@ -4214,7 +4277,7 @@ int observer_maybe_show_streaks(int startY) {
 		gr_get_string_size(Players[pnum].callsign, &w, &h, &aw);
 		x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
-		gr_printf(x, y, "%s", Players[pnum].callsign);
+		HUD_GR_PRINTF(x, y, "%s", Players[pnum].callsign);
 		y += LINE_SPACING;
 
 		color = get_color_for_player(pnum, 1);
@@ -4226,7 +4289,7 @@ int observer_maybe_show_streaks(int startY) {
 			gr_get_string_size(g_status->text, &w, &h, &aw);
 			x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
-			gr_printf(x, y, "%s", g_status->text);
+			HUD_GR_PRINTF(x, y, "%s", g_status->text);
 			y += LINE_SPACING;
 
 			g_status = g_status->next;
@@ -4321,14 +4384,14 @@ void observer_maybe_show_death_log(int y) {
 		gr_get_string_size(killed, &sw, &sh, &aw);
 		x -= sw;
 		gr_set_fontcolor(killed_color, -1);
-		gr_printf(x, y, "%s", killed);
+		HUD_GR_PRINTF(x, y, "%s", killed);
 		x -= 8;
 
 		// Draw >
 		gr_get_string_size(">", &sw, &sh, &aw);
 		x -= sw;
 		gr_set_fontcolor(BM_XRGB(12, 12, 12), -1);
-		gr_printf(x, y, ">");
+		HUD_GR_PRINTF(x, y, ">");
 		x -= 8;
 
 		// Draw killer
@@ -4336,7 +4399,7 @@ void observer_maybe_show_death_log(int y) {
 			gr_get_string_size(killer, &sw, &sh, &aw);
 			x -= sw;
 			gr_set_fontcolor(killer_color, -1);
-			gr_printf(x, y, killer);
+			HUD_GR_PRINTF(x, y, killer);
 			x -= 8;
 		}
 
@@ -4345,7 +4408,7 @@ void observer_maybe_show_death_log(int y) {
 			gr_get_string_size(reason, &sw, &sh, &aw);
 			x -= sw;
 			gr_set_fontcolor(reason_color, -1);
-			gr_printf(x, y, reason);
+			HUD_GR_PRINTF(x, y, reason);
 			x -= 8;
 		}
 
@@ -4377,7 +4440,7 @@ void observer_maybe_show_death_log(int y) {
 			x = grd_curcanv->cv_bitmap.bm_w - 5;
 			gr_get_string_size(damage_for, &sw, &sh, &aw);
 			x -= sw;
-			gr_printf(x, y, damage_for);
+			HUD_GR_PRINTF(x, y, damage_for);
 			y += LINE_SPACING;
 
 			dtt = First_damage_taken_previous_totals[kle->killed_id];
@@ -4442,7 +4505,7 @@ void observer_maybe_show_death_log(int y) {
 				x = grd_curcanv->cv_bitmap.bm_w - 5;
 				gr_get_string_size(damage_for, &sw, &sh, &aw);
 				x -= sw;
-				gr_printf(x, y, damage_for);
+				HUD_GR_PRINTF(x, y, damage_for);
 				y += LINE_SPACING;
 
 				dtt = dtt->next;
@@ -4888,7 +4951,7 @@ void draw_hud()
 					y -= LINE_SPACING * 2;
 			}
 
-			gr_printf( x, y, "%s %2d%%", TXT_CRUISE, f2i(Cruise_speed) );
+			HUD_GR_PRINTF( x, y, "%s %2d%%", TXT_CRUISE, f2i(Cruise_speed) );
 		}
 	}
 
