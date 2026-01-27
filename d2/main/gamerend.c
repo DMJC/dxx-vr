@@ -1027,6 +1027,32 @@ void toggle_cockpit()
 int last_drawn_cockpit = -1;
 extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 
+static void cockpit_draw_scale(float *scale_x, float *scale_y)
+{
+	float sx = 1.0f;
+	float sy = 1.0f;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		int vr_w = 0;
+		int vr_h = 0;
+
+		vr_openvr_render_size(&vr_w, &vr_h);
+		if (vr_w > 0 && vr_h > 0 && grd_curscreen->sc_w > 0 && grd_curscreen->sc_h > 0)
+		{
+			sx = (float)vr_w / (float)grd_curscreen->sc_w;
+			sy = (float)vr_h / (float)grd_curscreen->sc_h;
+		}
+	}
+#endif
+
+	if (scale_x)
+		*scale_x = sx;
+	if (scale_y)
+		*scale_y = sy;
+}
+
 static void cockpit_draw_offset(int *x, int *y)
 {
 	int offset_x = 0;
@@ -1040,16 +1066,21 @@ static void cockpit_draw_offset(int *x, int *y)
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
+		float scale_x = 1.0f;
+		float scale_y = 1.0f;
+
+		cockpit_draw_scale(&scale_x, &scale_y);
+
 		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
 		{
-			const float width = (float)grd_curscreen->sc_w;
-			const float height = (float)grd_curscreen->sc_h;
+			const float width = (float)grd_curscreen->sc_w * scale_x;
+			const float height = (float)grd_curscreen->sc_h * scale_y;
 			const float x_ndc = (r + l) / (r - l);
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curscreen->sc_w / 2);
-			offset_y = center_y - (grd_curscreen->sc_h / 2);
+			offset_x = center_x - (int)lroundf(width * 0.5f);
+			offset_y = center_y - (int)lroundf(height * 0.5f);
 		}
 	}
 #endif
@@ -1075,12 +1106,18 @@ void update_cockpits()
 		int cockpit_offset_y = 0;
 
 		cockpit_draw_offset(&cockpit_offset_x, &cockpit_offset_y);
+#ifdef OGL
+		float cockpit_scale_x = 1.0f;
+		float cockpit_scale_y = 1.0f;
+
+		cockpit_draw_scale(&cockpit_scale_x, &cockpit_scale_y);
+#endif
 
 		switch (PlayerCfg.CurrentCockpitMode) {
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, -1, bm, 255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, (int)lroundf((float)bm->bm_w * cockpit_scale_x), (int)lroundf((float)bm->bm_h * cockpit_scale_y), bm, 255, F1_0);
 #else
 				gr_ubitmapm(cockpit_offset_x, cockpit_offset_y, bm);
 #endif
@@ -1089,7 +1126,7 @@ void update_cockpits()
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, -1, bm, 255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, (int)lroundf((float)bm->bm_w * cockpit_scale_x), (int)lroundf((float)bm->bm_h * cockpit_scale_y), bm, 255, F1_0);
 #else
 				gr_ubitmapm(cockpit_offset_x, cockpit_offset_y, bm);
 #endif
@@ -1102,7 +1139,7 @@ void update_cockpits()
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
 #ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72) + cockpit_offset_y, -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, (int)lroundf((HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72) * cockpit_scale_y) + cockpit_offset_y, (int)lroundf((float)bm->bm_w * cockpit_scale_x), (int)lroundf(((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) * cockpit_scale_y) + 0.5), bm,255, F1_0);
 #else
 				gr_ubitmapm(cockpit_offset_x, SHEIGHT - bm->bm_h + cockpit_offset_y, bm);
 #endif
