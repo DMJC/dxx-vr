@@ -418,11 +418,8 @@ static void cockpit_gauge_offset(int *x, int *y)
 	do { \
 		int offset_x = 0; \
 		int offset_y = 0; \
-		float scale_x = 1.0f; \
-		float scale_y = 1.0f; \
 		cockpit_gauge_offset(&offset_x, &offset_y); \
-		hud_vr_scale(&scale_x, &scale_y); \
-		gr_printf((int)lroundf((x) * scale_x) + offset_x, (int)lroundf((y) * scale_y) + offset_y, __VA_ARGS__); \
+		gr_printf((x) + offset_x, (y) + offset_y, __VA_ARGS__); \
 	} while (0)
 #else
 #define HUD_GR_PRINTF(x, y, ...) gr_printf((x), (y), __VA_ARGS__)
