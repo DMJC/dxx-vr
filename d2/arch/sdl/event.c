@@ -203,8 +203,9 @@ void event_process(void)
 	if (window_get_front() != wind)
 		return;
 
-	int use_vr_menu = 0;
+	int use_vr_menu = vr_openvr_active();
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
+
 	if (briefing_active == 1){
 		switch(VR_briefing_mve_active){
 			case 1:
@@ -217,6 +218,8 @@ void event_process(void)
 			use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || Movie_allow_openvr_submit);
 		break;
 		}
+	} else {
+		use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || !Movie_allow_openvr_submit);
 	}
 	if (use_vr_menu)
 	{
