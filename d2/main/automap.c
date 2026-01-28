@@ -171,7 +171,58 @@ static void automap_vr_offset(int *x, int *y)
 
 	if (vr_openvr_active())
 	{
-		float l0 = 0.0f;
+		float l_left = 0.0f;
+		float r_left = 0.0f;
+		float b_left = 0.0f;
+		float t_left = 0.0f;
+		float l_right = 0.0f;
+		float r_right = 0.0f;
+		float b_right = 0.0f;
+		float t_right = 0.0f;
+		int render_w = 0;
+		int render_h = 0;
+
+		vr_openvr_render_size(&render_w, &render_h);
+		const float width = (float)((render_w > 0) ? render_w : grd_curcanv->cv_bitmap.bm_w);
+		const float height = (float)((render_h > 0) ? render_h : grd_curcanv->cv_bitmap.bm_h);
+		const int canvas_w = (render_w > 0) ? render_w : grd_curcanv->cv_bitmap.bm_w;
+		const int canvas_h = (render_h > 0) ? render_h : grd_curcanv->cv_bitmap.bm_h;
+		const int has_left = vr_openvr_eye_projection(0, &l_left, &r_left, &b_left, &t_left);
+		const int has_right = vr_openvr_eye_projection(1, &l_right, &r_right, &b_right, &t_right);
+
+		if (has_left && has_right)
+		{
+			const float x_ndc_left = (r_left + l_left) / (r_left - l_left);
+			const float y_ndc_left = (t_left + b_left) / (t_left - b_left);
+			const float x_ndc_right = (r_right + l_right) / (r_right - l_right);
+			const float y_ndc_right = (t_right + b_right) / (t_right - b_right);
+			const int center_x_left = (int)lroundf((-x_ndc_left * 0.5f + 0.5f) * width);
+			const int center_y_left = (int)lroundf((0.5f - 0.5f * y_ndc_left) * height);
+			const int center_x_right = (int)lroundf((-x_ndc_right * 0.5f + 0.5f) * width);
+			const int center_y_right = (int)lroundf((0.5f - 0.5f * y_ndc_right) * height);
+			const int center_x = (center_x_left + center_x_right) / 2;
+			const int center_y = (center_y_left + center_y_right) / 2;
+			offset_x = center_x - (canvas_w / 2);
+			offset_y = center_y - (canvas_h / 2);
+		}
+		else
+		{
+			const int eye = vr_openvr_current_eye();
+			float l = 0.0f;
+			float r = 0.0f;
+			float b = 0.0f;
+			float t = 0.0f;
+
+			if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			{
+				const float x_ndc = (r + l) / (r - l);
+				const float y_ndc = (t + b) / (t - b);
+				const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+				const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+				offset_x = center_x - (canvas_w / 2);
+				offset_y = center_y - (canvas_h / 2);
+			}
+/*		float l0 = 0.0f;
 		float r0 = 0.0f;
 		float b0 = 0.0f;
 		float t0 = 0.0f;
@@ -213,6 +264,7 @@ static void automap_vr_offset(int *x, int *y)
 		{
 			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
 			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
+		}*/
 		}
 	}
 	*x = offset_x;

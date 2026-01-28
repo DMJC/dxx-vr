@@ -47,6 +47,11 @@ static GLint vr_prev_fbo = 0;
 static GLint vr_prev_viewport[4] = {0, 0, 0, 0};
 static int Canvas_width = 0;
 static int Canvas_height = 0;
+static int vr_prev_screen_width = 0;
+static int vr_prev_screen_height = 0;
+static int vr_prev_canvas_bm_w = 0;
+static int vr_prev_canvas_bm_h = 0;
+static int vr_prev_canvas_bm_rowsize = 0;
 static int vr_prev_canvas_width = 0;
 static int vr_prev_canvas_height = 0;
 static int vr_prev_last_width = 0;
@@ -516,8 +521,20 @@ void vr_openvr_bind_eye(int eye)
 
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &vr_prev_fbo);
 	glGetIntegerv(GL_VIEWPORT, vr_prev_viewport);
+	vr_prev_screen_width = grd_curscreen->sc_w;
+	vr_prev_screen_height = grd_curscreen->sc_h;
+	vr_prev_canvas_bm_w = grd_curcanv->cv_bitmap.bm_w;
+	vr_prev_canvas_bm_h = grd_curcanv->cv_bitmap.bm_h;
+	vr_prev_canvas_bm_rowsize = grd_curcanv->cv_bitmap.bm_rowsize;
+	vr_prev_last_width = last_width;
+	vr_prev_last_height = last_height;
 	glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
 	glViewport(0, 0, vr_render_width, vr_render_height);
+	grd_curscreen->sc_w = (int)vr_render_width;
+	grd_curscreen->sc_h = (int)vr_render_height;
+	grd_curcanv->cv_bitmap.bm_w = (int)vr_render_width;
+	grd_curcanv->cv_bitmap.bm_h = (int)vr_render_height;
+	grd_curcanv->cv_bitmap.bm_rowsize = (int)vr_render_width;
 	last_width = vr_render_width;
 	last_height = vr_render_height;
 	vr_current_eye = eye;
@@ -539,6 +556,14 @@ void vr_openvr_unbind_eye(void)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)vr_prev_fbo);
 	glViewport(vr_prev_viewport[0], vr_prev_viewport[1], vr_prev_viewport[2], vr_prev_viewport[3]);
+	grd_curscreen->sc_w = vr_prev_screen_width;
+	grd_curscreen->sc_h = vr_prev_screen_height;
+	grd_curcanv->cv_bitmap.bm_w = vr_prev_canvas_bm_w;
+	grd_curcanv->cv_bitmap.bm_h = vr_prev_canvas_bm_h;
+	grd_curcanv->cv_bitmap.bm_rowsize = vr_prev_canvas_bm_rowsize;
+	last_width = vr_prev_last_width;
+	last_height = vr_prev_last_height;
+
 	vr_current_eye = -1;
 #endif
 #endif
