@@ -1113,7 +1113,12 @@ void show_spinning_robot_frame(briefing *br, int robot_num)
 	grs_canvas	*curcanv_save;
 
 	if (robot_num != -1) {
-		br->robot_angles.p = br->robot_angles.b = 0;
+		br->robot_angles.p = 0;
+#ifdef USE_OPENVR
+		br->robot_angles.b = vr_openvr_active() ? F1_0/2 : 0;
+#else
+		br->robot_angles.b = 0;
+#endif
 		br->robot_angles.h += 150;
 
 		curcanv_save = grd_curcanv;
