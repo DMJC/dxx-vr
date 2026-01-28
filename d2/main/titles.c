@@ -1526,6 +1526,10 @@ void do_briefing_screens(char *filename, int level_num)
 	// Too complicated otherwise
 	while (window_exists(wind))
 		event_process();
+
+	VR_briefing_active = 0;
+	briefing_active = 0;
+	VR_briefing_mve_active = 0;
 }
 
 void do_end_briefing_screens(char *filename)
