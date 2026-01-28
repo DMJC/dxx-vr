@@ -16,8 +16,8 @@
 #include "config.h"
 #include "args.h"
 #include "game.h"
-#ifdef OGL
 #include "titles.h"
+#ifdef OGL
 #include "vr_openvr.h"
 #include "screens.h"
 #endif
@@ -202,9 +202,22 @@ void event_process(void)
 	// such as some network menus when they report a problem
 	if (window_get_front() != wind)
 		return;
-	
+
+	int use_vr_menu = 0;
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
-	int use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || !Movie_allow_openvr_submit);
+	if (briefing_active == 1){
+		switch(VR_briefing_mve_active){
+			case 1:
+			use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || !Movie_allow_openvr_submit);
+		break;
+			case 0:
+			use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || Movie_allow_openvr_submit);
+		break;
+		default:
+			use_vr_menu = vr_openvr_active() && (Screen_mode != SCREEN_MOVIE || Movie_allow_openvr_submit);
+		break;
+		}
+	}
 	if (use_vr_menu)
 	{
 		vr_openvr_begin_frame();

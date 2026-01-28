@@ -71,6 +71,8 @@ int	Briefing_text_colors[MAX_BRIEFING_COLORS];
 int	Current_color = 0;
 int	Erase_color;
 int	VR_briefing_active = 0;
+int     briefing_active = 0;
+int	VR_briefing_mve_active = 0;
 #ifdef USE_OPENVR
 #ifdef OGL
 static GLuint briefing_fbo = 0;
@@ -716,6 +718,7 @@ int briefing_process_char(briefing *br)
 			if (br->robot_playing) {
 				DeInitRobotMovie();
 				br->robot_playing=0;
+				VR_briefing_mve_active = 0;
 			}
 
 			if (EMULATING_D1) {
@@ -730,7 +733,7 @@ int briefing_process_char(briefing *br)
 				spinRobotName[2]=kludge; // ugly but proud
 
 				br->robot_playing=InitRobotMovie(spinRobotName);
-
+				VR_briefing_mve_active = br->robot_playing ? 1 : 0;
 				// gr_remap_bitmap_good( &grd_curcanv->cv_bitmap, pal, -1, -1 );
 
 				if (br->robot_playing) {
@@ -1144,6 +1147,7 @@ void init_new_page(briefing *br)
 	{
 		DeInitRobotMovie();
 		br->robot_playing=0;
+		VR_briefing_mve_active = 0;
 	}
 
 	br->start_time = 0;
@@ -1232,6 +1236,7 @@ void free_briefing_screen(briefing *br)
 	{
 		DeInitRobotMovie();
 		br->robot_playing=0;
+		VR_briefing_mve_active = 0;
 	}
 	if (br->robot_canv != NULL)
 		d_free(br->robot_canv);
@@ -1489,6 +1494,9 @@ void do_briefing_screens(char *filename, int level_num)
 		d_free(br);
 		return;
 	}
+	VR_briefing_active = 1;
+	briefing_active = 1;
+	VR_briefing_mve_active = 0;
 
 	if (EMULATING_D1 || is_SHAREWARE || is_MAC_SHARE || is_D2_OEM || !PLAYING_BUILTIN_MISSION)
 	{
