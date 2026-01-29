@@ -285,6 +285,58 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define HUD_SCALE_Y_AR(y)	(y)
 #endif
 
+static inline double hud_vr_scale(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+		return 0.7;
+#endif
+	return 1.0;
+}
+
+static inline void hud_vr_center(int *x, int *y)
+{
+	int center_x = grd_curscreen->sc_w / 2;
+	int center_y = grd_curscreen->sc_h / 2;
+
+	*x = center_x;
+	*y = center_y;
+}
+
+static inline void hud_vr_transform_point(int *x, int *y)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		int center_x = 0;
+		int center_y = 0;
+		const double scale = hud_vr_scale();
+
+		hud_vr_center(&center_x, &center_y);
+		*x = (int)lround(scale * (*x) + (1.0 - scale) * center_x);
+		*y = (int)lround(scale * (*y) + (1.0 - scale) * center_y);
+	}
+#endif
+}
+
+static inline void hud_vr_transform_rect(int *x, int *y, int *w, int *h)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		int center_x = 0;
+		int center_y = 0;
+		const double scale = hud_vr_scale();
+
+		hud_vr_center(&center_x, &center_y);
+		*x = (int)lround(scale * (*x) + (1.0 - scale) * center_x);
+		*y = (int)lround(scale * (*y) + (1.0 - scale) * center_y);
+		*w = (int)lround(scale * (*w));
+		*h = (int)lround(scale * (*h));
+	}
+#endif
+}
+
 bitmap_index Gauges[MAX_GAUGE_BMS];   // Array of all gauge bitmaps.
 bitmap_index Gauges_hires[MAX_GAUGE_BMS];   // hires gauges
 grs_bitmap deccpt;
@@ -316,33 +368,8 @@ static inline void _page_in_gauge(int x)
 
 static void cockpit_gauge_offset(int *x, int *y)
 {
-	int offset_x = 0;
-	int offset_y = 0;
-
-#ifdef USE_OPENVR
-	if (vr_openvr_active())
-	{
-		const int eye = vr_openvr_current_eye();
-		float l = 0.0f;
-		float r = 0.0f;
-		float b = 0.0f;
-		float t = 0.0f;
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-		{
-			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
-			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
-			const float x_ndc = (r + l) / (r - l);
-			const float y_ndc = (t + b) / (t - b);
-			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
-			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
-		}
-	}
-#endif
-
-	*x = offset_x;
-	*y = offset_y;
+	*x = 0;
+	*y = 0;
 }
 
 void draw_ammo_info(int x,int y,int ammo_count,int primary);
@@ -707,6 +734,7 @@ span weapon_window_right_hires[] = {
 
 static inline void hud_bitblt_free (int x, int y, int w, int h, grs_bitmap *bm)
 {
+	hud_vr_transform_rect(&x, &y, &w, &h);
 #ifdef OGL
 	ogl_ubitmapm_cs (x,y,w,h,bm,-1,F1_0);
 #else
@@ -717,11 +745,81 @@ static inline void hud_bitblt_free (int x, int y, int w, int h, grs_bitmap *bm)
 static inline void hud_bitblt (int x, int y, grs_bitmap *bm)
 {
 #ifdef OGL
-	ogl_ubitmapm_cs (x,y,HUD_SCALE_X (bm->bm_w),HUD_SCALE_Y (bm->bm_h),bm,-1,F1_0);
+//	ogl_ubitmapm_cs (x,y,HUD_SCALE_X (bm->bm_w),HUD_SCALE_Y (bm->bm_h),bm,-1,F1_0);
+	int w = HUD_SCALE_X(bm->bm_w);
+	int h = HUD_SCALE_Y(bm->bm_h);
+
+	hud_vr_transform_rect(&x, &y, &w, &h);
+	ogl_ubitmapm_cs (x, y, w, h, bm, -1, F1_0);
 #else
 	gr_ubitmapm(x, y, bm);
 #endif
 }
+
+static int hud_gr_string(int x, int y, const char *s)
+{
+	hud_vr_transform_point(&x, &y);
+	return gr_string(x, y, s);
+}
+
+static int hud_gr_printf(int x, int y, const char *format, ...)
+{
+	char buffer[1000];
+	va_list args;
+
+	va_start(args, format);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+
+	return hud_gr_string(x, y, buffer);
+}
+
+static void hud_gr_rect(int left, int top, int right, int bot)
+{
+	hud_vr_transform_point(&left, &top);
+	hud_vr_transform_point(&right, &bot);
+	gr_rect(left, top, right, bot);
+}
+
+static void hud_gr_urect(int left, int top, int right, int bot)
+{
+	hud_vr_transform_point(&left, &top);
+	hud_vr_transform_point(&right, &bot);
+	gr_urect(left, top, right, bot);
+}
+
+static void hud_gr_ubox(int left, int top, int right, int bot)
+{
+	hud_vr_transform_point(&left, &top);
+	hud_vr_transform_point(&right, &bot);
+	gr_ubox(left, top, right, bot);
+}
+
+static int hud_gr_uline(fix x0, fix y0, fix x1, fix y1)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		int center_x = 0;
+		int center_y = 0;
+		const double scale = hud_vr_scale();
+
+		hud_vr_center(&center_x, &center_y);
+		x0 = fl2f(f2fl(x0) * scale + (1.0 - scale) * center_x);
+		y0 = fl2f(f2fl(y0) * scale + (1.0 - scale) * center_y);
+		x1 = fl2f(f2fl(x1) * scale + (1.0 - scale) * center_x);
+		y1 = fl2f(f2fl(y1) * scale + (1.0 - scale) * center_y);
+	}
+#endif
+	return gr_uline(x0, y0, x1, y1);
+}
+
+#define gr_string hud_gr_string
+#define gr_printf hud_gr_printf
+#define gr_rect hud_gr_rect
+#define gr_urect hud_gr_urect
+#define gr_ubox hud_gr_ubox
+#define gr_uline hud_gr_uline
 
 int get_pnum_for_hud()
 {
@@ -2618,31 +2716,7 @@ static const xy secondary_offsets[4] =	{ {-24,2},	{-12,0}, {-12,1}, {-6,-2} };
 
 static void reticle_center(int *x, int *y)
 {
-	int center_x = grd_curcanv->cv_bitmap.bm_w / 2;
-	int center_y = grd_curcanv->cv_bitmap.bm_h / 2;
-
-#ifdef USE_OPENVR
-	if (vr_openvr_active())
-	{
-		const int eye = vr_openvr_current_eye();
-		float l = 0.0f;
-		float r = 0.0f;
-		float b = 0.0f;
-		float t = 0.0f;
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-		{
-			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
-			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
-			const float x_ndc = (r + l) / (r - l);
-			const float y_ndc = (t + b) / (t - b);
-			center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-			center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-		}
-	}
-#endif
-
-	*x = center_x;
-	*y = center_y;
+	hud_vr_center(x, y);
 }
 
 //draw the reticle

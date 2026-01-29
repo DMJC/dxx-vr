@@ -664,7 +664,12 @@ void draw_automap(automap *am)
 	int offset_y = 0;
 
 	automap_vr_offset(&offset_x, &offset_y);
-	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
+//	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
+	const int automap_w = (SWIDTH * 4) / 5;
+	const int automap_h = (SHEIGHT * 4) / 5;
+	const int automap_x = ((SWIDTH - automap_w) / 2) + offset_x;
+	const int automap_y = ((SHEIGHT - automap_h) / 2) + offset_y;
+	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
 #endif
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
@@ -1091,10 +1096,23 @@ void do_automap()
 		int offset_y = 0;
 
 		automap_vr_offset(&offset_x, &offset_y);
-		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
+//		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
+		const int automap_w = (SWIDTH * 4) / 5;
+		const int automap_h = (SHEIGHT * 4) / 5;
+		const int automap_x = ((SWIDTH - automap_w) / 2) + offset_x;
+		const int automap_y = ((SHEIGHT - automap_h) / 2) + offset_y;
+		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
 	}
 #else
+//	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
+	{
+		const int automap_w = (SWIDTH * 4) / 5;
+		const int automap_h = (SHEIGHT * 4) / 5;
+		const int automap_x = (SWIDTH - automap_w) / 2;
+		const int automap_y = (SHEIGHT - automap_h) / 2;
+		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
+	}
 #endif
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
