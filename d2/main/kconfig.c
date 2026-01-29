@@ -1286,12 +1286,20 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 	{
 		case EVENT_KEY_COMMAND:
 		case EVENT_KEY_RELEASE:
+		{
+			const int raw_key = event_key_get_raw(event);
 			for (i = 0; i < NUM_KEY_CONTROLS; i++)
 			{
-				if (kc_keyboard[i].value < 255 && kc_keyboard[i].value == event_key_get_raw(event))
+				if (kc_keyboard[i].value < 255 && kc_keyboard[i].value == raw_key)
 				{
 					if (kc_keyboard[i].ci_state_ptr != NULL)
 					{
+						if ((raw_key == KEY_UP || raw_key == KEY_PAD8 || raw_key == KEY_DOWN || raw_key == KEY_PAD2)
+							&& (kc_keyboard[i].ci_state_ptr == &Controls.key_bank_left_state
+								|| kc_keyboard[i].ci_state_ptr == &Controls.key_bank_right_state))
+						{
+							continue;
+						}
 						if (event->type==EVENT_KEY_COMMAND)
 							*kc_keyboard[i].ci_state_ptr |= kc_keyboard[i].state_bit;
 						else
@@ -1301,14 +1309,32 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 						*kc_keyboard[i].ci_count_ptr += 1;
 				}
 			}
+
+			if (raw_key == KEY_UP || raw_key == KEY_PAD8)
+			{
+				if (event->type == EVENT_KEY_COMMAND)
+					Controls.key_pitch_forward_state |= (raw_key == KEY_UP ? STATE_BIT1 : STATE_BIT2);
+				else
+					Controls.key_pitch_forward_state &= ~(raw_key == KEY_UP ? STATE_BIT1 : STATE_BIT2);
+			}
+
+			if (raw_key == KEY_DOWN || raw_key == KEY_PAD2)
+			{
+				if (event->type == EVENT_KEY_COMMAND)
+					Controls.key_pitch_backward_state |= (raw_key == KEY_DOWN ? STATE_BIT1 : STATE_BIT2);
+				else
+					Controls.key_pitch_backward_state &= ~(raw_key == KEY_DOWN ? STATE_BIT1 : STATE_BIT2);
+			}
+
 			if (!automap_flag && event->type == EVENT_KEY_COMMAND)
 				for (i = 0, j = 0; i < 28; i += 3, j++)
-					if (kc_d2x[i].value < 255 && kc_d2x[i].value == event_key_get_raw(event))
+					if (kc_d2x[i].value < 255 && kc_d2x[i].value == raw_key)
 					{
 						Controls.select_weapon_count = j+1;
 						break;
 					}
 			break;
+		}
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		case EVENT_JOYSTICK_BUTTON_UP:
 			if (!(PlayerCfg.ControlType & CONTROL_USING_JOYSTICK))
