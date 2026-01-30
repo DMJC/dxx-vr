@@ -458,6 +458,12 @@ void draw_debug_text()
 
 void render_countdown_gauge()
 {
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	if (!Endlevel_sequence && Control_center_destroyed  && (Countdown_seconds_left>-1)) { // && (Countdown_seconds_left<127))	{
 
 		if (!is_D2_OEM && !is_MAC_SHARE && !is_SHAREWARE)    // no countdown on registered only
@@ -474,7 +480,11 @@ void render_countdown_gauge()
 
 		gr_set_curfont(GAME_FONT);
 		gr_set_fontcolor(BM_XRGB(0,63,0),-1);
+#ifdef USE_OPENVR
+		gr_printf(0x8000 + offset_x, (LINE_SPACING*6)+FSPACY(1) + offset_y, "T-%d s", Countdown_seconds_left );
+#else
 		gr_printf(0x8000, (LINE_SPACING*6)+FSPACY(1), "T-%d s", Countdown_seconds_left );
+#endif
 	}
 }
 

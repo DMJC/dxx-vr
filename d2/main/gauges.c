@@ -315,7 +315,7 @@ static inline void _page_in_gauge(int x)
 // #endif
 #endif
 
-static void cockpit_gauge_offset(int *x, int *y)
+extern void cockpit_gauge_offset(int *x, int *y)
 {
 	int offset_x = 0;
 	int offset_y = 0;
