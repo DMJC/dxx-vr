@@ -1062,7 +1062,7 @@ static inline double cockpit_vr_scale(void)
 {
 #ifdef USE_OPENVR
 	if (vr_openvr_active())
-		return 0.7;
+		return 0.65;
 #endif
 	return 1.0;
 }

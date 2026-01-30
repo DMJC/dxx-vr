@@ -273,7 +273,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SB_SECONDARY_BOX		(!HIRESMODE?3:7)
 
 // scaling gauges
-#define GAUGE_SCALE 0.7
+#define GAUGE_SCALE 0.65
 #ifdef USE_OPENVR
 #define HUD_SCALE_X(x)		((int) ((double) (x) * (HIRESMODE?(double)grd_curscreen->sc_w/640:(double)grd_curscreen->sc_w/320) * GAUGE_SCALE + 0.5))
 #define HUD_SCALE_Y(y)		((int) ((double) (y) * (HIRESMODE?(double)grd_curscreen->sc_h/480:(double)grd_curscreen->sc_h/200) * GAUGE_SCALE + 0.5))
@@ -1034,23 +1034,11 @@ void hud_show_keys(void)
 	red=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ];
 
 	if (Players[pnum].flags & PLAYER_FLAGS_BLUE_KEY)
-#ifdef USE_OPENVR
-		hud_bitblt_free(FSPACX(2) + offset_x,y + offset_y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
-#else
 		hud_bitblt_free(FSPACX(2),y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
-#endif
 	if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)
-#ifdef USE_OPENVR
-		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+3) + offset_x,y + offset_y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
-#else
 		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
-#endif
 	if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)
-#ifdef USE_OPENVR
-		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6) + offset_x,y + offset_y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
-#else
 		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
-#endif
 }
 
 #ifdef NETWORK
@@ -1150,7 +1138,11 @@ void hud_show_energy(void)
 		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 #endif
 		else
+#ifdef USE_OPENVR
+		     gr_printf(FSPACX(1) + offset_x, (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING) + offset_y,"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+#else
 		     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+#endif     
 	}
 
 	if (Newdemo_state == ND_STATE_RECORDING)
@@ -1276,7 +1268,6 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 						Players[pnum].laser_level+1);
 					break;
 				case 1:
-					//sprintf(weapon_str,"V%i", f2i((unsigned int)Players[pnum].primary_ammo[1] * VULCAN_AMMO_SCALE));
 					sprintf(weapon_str,"V"); 
 					break;
 				case 2:
@@ -1550,7 +1541,11 @@ void hud_show_cloak_invuln(void)
 
 		if (Players[pnum].cloak_time+CLOAK_TIME_MAX-GameTime64 > F1_0*3 || GameTime64 & 0x8000)
 		{
+#ifdef USE_OPENVR
+			gr_printf(FSPACX(1) + offset_x, y + offset_y, "%s", TXT_CLOAKED);
+#else
 			gr_printf(FSPACX(1), y, "%s", TXT_CLOAKED);
+#endif
 		}
 	}
 
@@ -1597,7 +1592,7 @@ void hud_show_shield(void)
 #endif
 			else
 #ifdef USE_OPENVR
-			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+			     gr_printf(FSPACX(1) + offset_x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)) + offset_y,"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 #else
    			     gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 #endif
@@ -1918,8 +1913,8 @@ void draw_wbu_overlay()
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (WinBoxOverlay[0] != NULL){
-#ifdef USE_OPENVR
 
+#ifdef USE_OPENVR
 		hud_bitblt(HUD_SCALE_X(PRIMARY_W_BOX_LEFT-2) + offset_x,HUD_SCALE_Y(PRIMARY_W_BOX_TOP-2) + offset_y,WinBoxOverlay[0]);
 #else
 		hud_bitblt(HUD_SCALE_X(PRIMARY_W_BOX_LEFT-2),HUD_SCALE_Y(PRIMARY_W_BOX_TOP-2),WinBoxOverlay[0]);
@@ -2226,7 +2221,11 @@ void draw_keys()
 #endif
 	} else {
 		PAGE_IN_GAUGE( GAUGE_BLUE_KEY_OFF );
+#ifdef USE_OPENVR
+		hud_bitblt( HUD_SCALE_X(GAUGE_BLUE_KEY_X) +offset_x, HUD_SCALE_Y(GAUGE_BLUE_KEY_Y) + offset_y, &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_BLUE_KEY_OFF) ]);
+#else
 		hud_bitblt( HUD_SCALE_X(GAUGE_BLUE_KEY_X), HUD_SCALE_Y(GAUGE_BLUE_KEY_Y), &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_BLUE_KEY_OFF) ]);
+#endif
 	}
 
 	if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)	{
@@ -2238,7 +2237,11 @@ void draw_keys()
 #endif
 	} else {
 		PAGE_IN_GAUGE( GAUGE_GOLD_KEY_OFF );
+#ifdef USE_OPENVR
+		hud_bitblt( HUD_SCALE_X(GAUGE_GOLD_KEY_X) +offset_x, HUD_SCALE_Y(GAUGE_GOLD_KEY_Y) + offset_y, &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_GOLD_KEY_OFF) ]);
+#else
 		hud_bitblt( HUD_SCALE_X(GAUGE_GOLD_KEY_X), HUD_SCALE_Y(GAUGE_GOLD_KEY_Y), &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_GOLD_KEY_OFF) ]);
+#endif
 	}
 
 	if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)	{
@@ -2250,7 +2253,11 @@ void draw_keys()
 #endif
 	} else {
 		PAGE_IN_GAUGE( GAUGE_RED_KEY_OFF );
+#ifdef USE_OPENVR
+		hud_bitblt( HUD_SCALE_X(GAUGE_RED_KEY_X) +offset_x, HUD_SCALE_Y(GAUGE_RED_KEY_Y) + offset_y, &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_RED_KEY_OFF) ]);
+#else
 		hud_bitblt( HUD_SCALE_X(GAUGE_RED_KEY_X), HUD_SCALE_Y(GAUGE_RED_KEY_Y), &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_RED_KEY_OFF) ]);
+#endif
 	}
 }
 
@@ -2288,9 +2295,11 @@ void draw_weapon_info_sub(int info_index,gauge_box *box,int pic_x,int pic_y,char
 	}
 
 	Assert(bm != NULL);
-
+#ifdef USE_OPENVR
+	hud_bitblt(HUD_SCALE_X(pic_x) + offset_x, HUD_SCALE_Y(pic_y) + offset_y, bm);
+#else
 	hud_bitblt(HUD_SCALE_X(pic_x), HUD_SCALE_Y(pic_y), bm);
-
+#endif
 	if (PlayerCfg.HudMode == 0)
 	{
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
@@ -2375,9 +2384,19 @@ void draw_ammo_info(int x,int y,int ammo_count,int primary)
 {
 	if (!PlayerCfg.HudMode)
 	{
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;
+
+        cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 		gr_setcolor(BM_XRGB(0,0,0));
 		gr_set_fontcolor(BM_XRGB(20,0,0),-1 );
+#ifdef USE_OPENVR
+		gr_printf(x + offset_x,y + offset_y,"%03d",ammo_count);
+#else
 		gr_printf(x,y,"%03d",ammo_count);
+#endif
 	}
 }
 
@@ -2599,9 +2618,9 @@ void sb_draw_afterburner()
 
 	gr_get_string_size(ab_str, &w, &h, &aw );
 #ifdef USE_OPENVR
-	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))), "AB");
-#else
 	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))) + offset_y, "AB");
+#else
+	gr_printf(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W+1)/2)-(w/2), HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y+(SB_AFTERBURNER_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4))), "AB");
 #endif
 	gr_set_current_canvas(NULL);
 }
@@ -2648,20 +2667,37 @@ void sb_draw_shield_bar(int shield)
 void sb_draw_keys()
 {
 	int pnum = get_pnum_for_hud();
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
 
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	grs_bitmap * bm;
 	int flags = Players[pnum].flags;
 
 	gr_set_current_canvas(NULL);
 	bm = &GameBitmaps[ GET_GAUGE_INDEX((flags&PLAYER_FLAGS_BLUE_KEY)?SB_GAUGE_BLUE_KEY:SB_GAUGE_BLUE_KEY_OFF) ];
 	PAGE_IN_GAUGE( (flags&PLAYER_FLAGS_BLUE_KEY)?SB_GAUGE_BLUE_KEY:SB_GAUGE_BLUE_KEY_OFF );
+#ifdef USE_OPENVR
+	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X) + offset_x, HUD_SCALE_Y(SB_GAUGE_BLUE_KEY_Y) + offset_y, bm);
+#else	
 	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X), HUD_SCALE_Y(SB_GAUGE_BLUE_KEY_Y), bm);
+#endif
 	bm = &GameBitmaps[ GET_GAUGE_INDEX((flags&PLAYER_FLAGS_GOLD_KEY)?SB_GAUGE_GOLD_KEY:SB_GAUGE_GOLD_KEY_OFF) ];
 	PAGE_IN_GAUGE( (flags&PLAYER_FLAGS_GOLD_KEY)?SB_GAUGE_GOLD_KEY:SB_GAUGE_GOLD_KEY_OFF );
+#ifdef USE_OPENVR
+	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X) + offset_x, HUD_SCALE_Y(SB_GAUGE_GOLD_KEY_Y) + offset_y, bm);
+#else	
 	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X), HUD_SCALE_Y(SB_GAUGE_GOLD_KEY_Y), bm);
+#endif
 	bm = &GameBitmaps[ GET_GAUGE_INDEX((flags&PLAYER_FLAGS_RED_KEY)?SB_GAUGE_RED_KEY:SB_GAUGE_RED_KEY_OFF) ];
 	PAGE_IN_GAUGE( (flags&PLAYER_FLAGS_RED_KEY)?SB_GAUGE_RED_KEY:SB_GAUGE_RED_KEY_OFF );
+#ifdef USE_OPENVR
+	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X) + offset_x, HUD_SCALE_Y(SB_GAUGE_RED_KEY_Y) + offset_y, bm);
+#else	
 	hud_bitblt( HUD_SCALE_X(SB_GAUGE_KEYS_X), HUD_SCALE_Y(SB_GAUGE_RED_KEY_Y), bm);
+#endif
 }
 
 //	Draws invulnerable ship, or maybe the flashing ship, depending on invulnerability time left.
@@ -4173,6 +4209,12 @@ void observer_maybe_show_kill_graph() {
 }
 
 int maybe_show_observers(int startY) {
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) {
 		return startY;
 	}
@@ -4209,7 +4251,11 @@ int maybe_show_observers(int startY) {
 	gr_get_string_size("Observers:", &w, &h, &aw);
 	x = grd_curcanv->cv_bitmap.bm_w - w - 5;
 
+#ifdef USE_OPENVR
+	gr_printf(x + offset_x, y + offset_y, "Observers:");
+#else
 	gr_printf(x, y, "Observers:");
+#endif
 	y += LINE_SPACING;
 
 	if (Netgame.host_is_obs) {
@@ -4227,8 +4273,11 @@ int maybe_show_observers(int startY) {
 
 		gr_get_string_size(Netgame.observers[i].callsign, &w, &h, &aw);
 		x = grd_curcanv->cv_bitmap.bm_w - w - 5;
-
+#ifdef USE_OPENVR
+		gr_printf(x + offset_x, y + offset_y, "%s", Netgame.observers[i].callsign);
+#else
 		gr_printf(x, y, "%s", Netgame.observers[i].callsign);
+#endif
 		y += LINE_SPACING;
 	}
 
