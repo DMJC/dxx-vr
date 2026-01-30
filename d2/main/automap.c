@@ -20,7 +20,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "dxxerror.h"
 #include "3d.h"
@@ -69,9 +68,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -141,136 +137,6 @@ typedef struct automap
 	int			red_48;
 	control_info controls;
 } automap;
-
-#ifdef USE_OPENVR
-static int automap_vr_eye_projection(int eye, float *l, float *r, float *b, float *t)
-{
-	if (eye < 0)
-	{
-		return 0;
-	}
-
-	return vr_openvr_eye_projection(eye, l, r, b, t);
-}
-
-static int automap_vr_projection_center(float l, float r, float b, float t, int *center_x, int *center_y)
-{
-	const float width = (float)grd_curcanv->cv_bitmap.bm_w;
-	const float height = (float)grd_curcanv->cv_bitmap.bm_h;
-	const float x_ndc = (r + l) / (r - l);
-	const float y_ndc = (t + b) / (t - b);
-	*center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-	*center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-	return 1;
-}
-
-static void automap_vr_offset(int *x, int *y)
-{
-	int offset_x = 0;
-	int offset_y = 0;
-
-	if (vr_openvr_active())
-	{
-		float l_left = 0.0f;
-		float r_left = 0.0f;
-		float b_left = 0.0f;
-		float t_left = 0.0f;
-		float l_right = 0.0f;
-		float r_right = 0.0f;
-		float b_right = 0.0f;
-		float t_right = 0.0f;
-		int render_w = 0;
-		int render_h = 0;
-
-		vr_openvr_render_size(&render_w, &render_h);
-		const float width = (float)((render_w > 0) ? render_w : grd_curcanv->cv_bitmap.bm_w);
-		const float height = (float)((render_h > 0) ? render_h : grd_curcanv->cv_bitmap.bm_h);
-		const int canvas_w = (render_w > 0) ? render_w : grd_curcanv->cv_bitmap.bm_w;
-		const int canvas_h = (render_h > 0) ? render_h : grd_curcanv->cv_bitmap.bm_h;
-		const int has_left = vr_openvr_eye_projection(0, &l_left, &r_left, &b_left, &t_left);
-		const int has_right = vr_openvr_eye_projection(1, &l_right, &r_right, &b_right, &t_right);
-
-		if (has_left && has_right)
-		{
-			const float x_ndc_left = (r_left + l_left) / (r_left - l_left);
-			const float y_ndc_left = (t_left + b_left) / (t_left - b_left);
-			const float x_ndc_right = (r_right + l_right) / (r_right - l_right);
-			const float y_ndc_right = (t_right + b_right) / (t_right - b_right);
-			const int center_x_left = (int)lroundf((-x_ndc_left * 0.5f + 0.5f) * width);
-			const int center_y_left = (int)lroundf((0.5f - 0.5f * y_ndc_left) * height);
-			const int center_x_right = (int)lroundf((-x_ndc_right * 0.5f + 0.5f) * width);
-			const int center_y_right = (int)lroundf((0.5f - 0.5f * y_ndc_right) * height);
-			const int center_x = (center_x_left + center_x_right) / 2;
-			const int center_y = (center_y_left + center_y_right) / 2;
-			offset_x = center_x - (canvas_w / 2);
-			offset_y = center_y - (canvas_h / 2);
-		}
-		else
-		{
-			const int eye = vr_openvr_current_eye();
-			float l = 0.0f;
-			float r = 0.0f;
-			float b = 0.0f;
-			float t = 0.0f;
-
-			if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-			{
-				const float x_ndc = (r + l) / (r - l);
-				const float y_ndc = (t + b) / (t - b);
-				const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-				const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-				offset_x = center_x - (canvas_w / 2);
-				offset_y = center_y - (canvas_h / 2);
-			}
-/*		float l0 = 0.0f;
-		float r0 = 0.0f;
-		float b0 = 0.0f;
-		float t0 = 0.0f;
-		float l1 = 0.0f;
-		float r1 = 0.0f;
-		float b1 = 0.0f;
-		float t1 = 0.0f;
-		int center_x = 0;
-		int center_y = 0;
-
-		const int has_left = automap_vr_eye_projection(0, &l0, &r0, &b0, &t0);
-		const int has_right = automap_vr_eye_projection(1, &l1, &r1, &b1, &t1);
-
-		if (has_left && has_right)
-		{
-			const float l = (l0 + l1) * 0.5f;
-			const float r = (r0 + r1) * 0.5f;
-			const float b = (b0 + b1) * 0.5f;
-			const float t = (t0 + t1) * 0.5f;
-			automap_vr_projection_center(l, r, b, t, &center_x, &center_y);
-		}
-		else if (has_left || has_right)
-		{
-			const float l = has_left ? l0 : l1;
-			const float r = has_left ? r0 : r1;
-			const float b = has_left ? b0 : b1;
-			const float t = has_left ? t0 : t1;
-			automap_vr_projection_center(l, r, b, t, &center_x, &center_y);
-		}
-		else
-		{
-			const int eye = vr_openvr_current_eye();
-			if (automap_vr_eye_projection(eye, &l0, &r0, &b0, &t0))
-			{
-				automap_vr_projection_center(l0, r0, b0, t0, &center_x, &center_y);
-			}
-		}
-		if (center_x || center_y)
-		{
-			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
-			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
-		}*/
-		}
-	}
-	*x = offset_x;
-	*y = offset_y;
-}
-#endif
 
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
 #define MAX_EDGES 6000  // Determined by loading all the levels by John & Mike, Feb 9, 1995
@@ -659,18 +525,7 @@ void draw_automap(automap *am)
 	int color;
 	object * objp;
 	g3s_point sphere_point;
-#ifdef USE_OPENVR
-	int offset_x = 0;
-	int offset_y = 0;
 
-	automap_vr_offset(&offset_x, &offset_y);
-//	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
-	const int automap_w = (SWIDTH * 4) / 5;
-	const int automap_h = (SHEIGHT * 4) / 5;
-	const int automap_x = ((SWIDTH - automap_w) / 2) + offset_x;
-	const int automap_y = ((SHEIGHT - automap_h) / 2) + offset_y;
-	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
-#endif
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
 
@@ -678,22 +533,13 @@ void draw_automap(automap *am)
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-#ifdef USE_OPENVR
-	gr_string((SWIDTH/8) + offset_x, (SHEIGHT/16) + offset_y, TXT_AUTOMAP);
-#else
 	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
-#endif
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-#ifdef USE_OPENVR
-	gr_string((SWIDTH/10.666) + offset_x, (SHEIGHT/1.126) + offset_y, TXT_TURN_SHIP);
-	gr_printf((SWIDTH/10.666) + offset_x, (SHEIGHT/1.083) + offset_y, "F9/F10 Changes viewing distance");
-	gr_string((SWIDTH/10.666) + offset_x, (SHEIGHT/1.043) + offset_y, TXT_AUTOMAP_MARKER);
-#else
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.126), TXT_TURN_SHIP);
 	gr_printf((SWIDTH/10.666), (SHEIGHT/1.083), "F9/F10 Changes viewing distance");
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.043), TXT_AUTOMAP_MARKER);
-#endif
+
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -776,20 +622,12 @@ void draw_automap(automap *am)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
-#ifdef USE_OPENVR
-		gr_printf((SWIDTH/64) + offset_x, (SHEIGHT/18) + offset_y, "%s", msg);
-#else
 		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
-#endif
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
-#ifdef USE_OPENVR
-		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8) + offset_x, GHEIGHT-(GHEIGHT/8) + offset_y, GHEIGHT/5);
-#else
-
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
-#endif
+
 	am->t2 = timer_query();
 	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
 	{
@@ -1090,30 +928,8 @@ void do_automap()
 	if (pcx_error != PCX_ERROR_NONE)
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
-#ifdef USE_OPENVR
-	{
-		int offset_x = 0;
-		int offset_y = 0;
-
-		automap_vr_offset(&offset_x, &offset_y);
-//		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23) + offset_x, (SHEIGHT/6) + offset_y, (SWIDTH/1.1), (SHEIGHT/1.45));
-		const int automap_w = (SWIDTH * 4) / 5;
-		const int automap_h = (SHEIGHT * 4) / 5;
-		const int automap_x = ((SWIDTH - automap_w) / 2) + offset_x;
-		const int automap_y = ((SHEIGHT - automap_h) / 2) + offset_y;
-		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
-	}
-#else
-//	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-	{
-		const int automap_w = (SWIDTH * 4) / 5;
-		const int automap_h = (SHEIGHT * 4) / 5;
-		const int automap_x = (SWIDTH - automap_w) / 2;
-		const int automap_y = (SHEIGHT - automap_h) / 2;
-		gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, automap_x, automap_y, automap_w, automap_h);
-	}
-#endif
+
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }
