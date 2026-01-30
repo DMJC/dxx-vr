@@ -336,11 +336,9 @@ extern void cockpit_gauge_offset(int *x, int *y)
 			const float y_ndc = (t + b) / (t - b);
 			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-//			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
-//			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
 
-            offset_x = center_x - (int)(grd_curcanv->cv_bitmap.bm_w * GAUGE_SCALE * 0.5f);
-            offset_y = center_y - (int)(grd_curcanv->cv_bitmap.bm_h * GAUGE_SCALE * 0.5f);
+			offset_x = center_x - (int)(grd_curcanv->cv_bitmap.bm_w * GAUGE_SCALE * 0.5f);
+			offset_y = center_y - (int)(grd_curcanv->cv_bitmap.bm_h * GAUGE_SCALE * 0.5f);
 		}
 	}
 #endif

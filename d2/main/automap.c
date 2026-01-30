@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "dxxerror.h"
 #include "3d.h"
@@ -38,6 +39,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "menu.h"
 #include "screens.h"
 #include "textures.h"
+#include "vr_openvr.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #include "mouse.h"
 #include "timer.h"
 #include "segpoint.h"
@@ -112,7 +117,16 @@ typedef struct automap
 	
 	// Screen canvas variables
 	grs_canvas		automap_view;
-	
+	grs_bitmap		*automap_background_scaled;
+	int			background_x;
+	int			background_y;
+	int			background_w;
+	int			background_h;
+	int			view_x;
+	int			view_y;
+	int			view_w;
+	int			view_h;
+
 	grs_bitmap		automap_background;
 	
 	// Rendering variables
@@ -151,6 +165,8 @@ typedef struct automap
 #define K_FONT_COLOR_20         BM_XRGB(20, 20, 20 )
 #define K_GREEN_31              BM_XRGB(0, 31, 0)
 
+#define AUTOMAP_VIEW_SCALE 0.5
+
 int Automap_active = 0;
 
 void init_automap_colors(automap *am)
@@ -168,6 +184,91 @@ void init_automap_colors(automap *am)
 	am->white_63 = gr_find_closest_color_current(63,63,63);
 	am->blue_48 = gr_find_closest_color_current(0,0,48);
 	am->red_48 = gr_find_closest_color_current(48,0,0);
+}
+
+static void automap_vr_offset(int *x, int *y)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+
+                        offset_x = center_x - (int)(grd_curcanv->cv_bitmap.bm_w * AUTOMAP_VIEW_SCALE * 0.5f);
+                        offset_y = center_y - (int)(grd_curcanv->cv_bitmap.bm_h * AUTOMAP_VIEW_SCALE * 0.5f);
+		}
+	}
+#endif
+
+	*x = offset_x;
+	*y = offset_y;
+}
+
+static void automap_update_layout(automap *am)
+{
+	double scale = AUTOMAP_VIEW_SCALE;
+	int offset_x = 0;
+	int offset_y = 0;
+
+	am->background_w = (int)(SWIDTH * scale);
+	am->background_h = (int)(SHEIGHT * scale);
+	if (am->background_w < 1)
+		am->background_w = 1;
+	if (am->background_h < 1)
+		am->background_h = 1;
+	am->background_x = (SWIDTH - am->background_w) / 2;
+	am->background_y = (SHEIGHT - am->background_h) / 2;
+
+	am->view_x = am->background_x + (int)(scale * (SWIDTH / 23.0));
+	am->view_y = am->background_y + (int)(scale * (SHEIGHT / 6.0));
+	am->view_w = (int)(scale * (SWIDTH / 1.1));
+	am->view_h = (int)(scale * (SHEIGHT / 1.45));
+	if (am->view_w < 1)
+		am->view_w = 1;
+	if (am->view_h < 1)
+		am->view_h = 1;
+
+	automap_vr_offset(&offset_x, &offset_y);
+	am->background_x -= offset_x;
+	am->background_y -= offset_y;
+	am->view_x += offset_x;
+	am->view_y += offset_y;
+}
+
+static void automap_draw_background(const automap *am)
+{
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+	automap_vr_offset(&offset_x, &offset_y);
+#endif
+#ifdef OGL
+	if (grd_curcanv->cv_bitmap.bm_type == BM_OGL && am->automap_background.bm_type == BM_LINEAR) {
+		ogl_ubitmapm_cs(am->background_x - offset_x, am->background_y - offset_y, am->background_w, am->background_h, &am->automap_background, -1, F1_0);
+		return;
+	}
+#endif
+	if (am->automap_background_scaled != NULL) {
+#ifdef USE_OPENVR
+		gr_bitmap(am->background_x - offset_x, am->background_y - offset_y, am->automap_background_scaled);
+#else
+		gr_bitmap(am->background_x, am->background_y, am->automap_background_scaled);
+#endif
+	}
 }
 
 // Segment visited list
@@ -414,7 +515,11 @@ void name_frame(automap *am)
 {
 	char	name_level_left[128],name_level_right[128];
 	int wr,h,aw;
-
+#ifdef USE_OPENVR
+	int left_x;
+	int top_y;
+	int right_x;
+#endif
 	if (Current_level_num > 0)
 		sprintf(name_level_left, "%s %i",TXT_LEVEL, Current_level_num);
 	else
@@ -429,9 +534,25 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;
+
+	automap_vr_offset(&offset_x, &offset_y);
+
+	left_x = am->background_x + (int)(AUTOMAP_VIEW_SCALE * (SWIDTH / 64.0));
+	top_y = am->background_y + (int)(AUTOMAP_VIEW_SCALE * (SHEIGHT / 48.0));
+	gr_printf(left_x, top_y - offset_y, "%s", name_level_left);
+#else
 	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+#endif
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
+#ifdef USE_OPENVR
+	right_x = am->background_x + am->background_w - wr - (int)(AUTOMAP_VIEW_SCALE * (SWIDTH / 64.0));
+	gr_printf(right_x, top_y - offset_y, "%s", name_level_right);
+#else
 	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
+#endif
 }
 
 static void automap_apply_input(automap *am)
@@ -530,16 +651,35 @@ void draw_automap(automap *am)
 		am->leave_mode = 1;
 
 	gr_set_current_canvas(NULL);
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;
+
+	automap_vr_offset(&offset_x, &offset_y);
+
+	gr_clear_canvas(BM_XRGB(0,0,0));
+	automap_draw_background(am);
+#else
 	show_fullscr(&am->automap_background);
+#endif
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
+#ifdef USE_OPENVR
+	gr_string(am->background_x + (int)(AUTOMAP_VIEW_SCALE * (SWIDTH/8.0)) + offset_x, am->background_y + (int)(AUTOMAP_VIEW_SCALE * (SHEIGHT/16.0)) + offset_y, TXT_AUTOMAP);
+#else
 	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
+#endif
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
+#ifdef USE_OPENVR
+	gr_string(am->background_x + (int)(AUTOMAP_VIEW_SCALE * (SWIDTH/10.666)), am->background_y + (int)(AUTOMAP_VIEW_SCALE * (SHEIGHT/1.126)), TXT_TURN_SHIP);
+	gr_printf(am->background_x + (int)(AUTOMAP_VIEW_SCALE * (SWIDTH/10.666)) + offset_x, am->background_y + (int)(AUTOMAP_VIEW_SCALE * (SHEIGHT/1.083)) + offset_y, "F9/F10 Changes viewing distance");
+	gr_string(am->background_x + (int)(AUTOMAP_VIEW_SCALE * (SWIDTH/10.666)), am->background_y + (int)(AUTOMAP_VIEW_SCALE * (SHEIGHT/1.043)), TXT_AUTOMAP_MARKER);
+#else
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.126), TXT_TURN_SHIP);
-	gr_printf((SWIDTH/10.666), (SHEIGHT/1.083), "F9/F10 Changes viewing distance");
+	gr_printf((SWIDTH/10.666) + offset_x, (SHEIGHT/1.083) + offset_y, "F9/F10 Changes viewing distance");
 	gr_string((SWIDTH/10.666), (SHEIGHT/1.043), TXT_AUTOMAP_MARKER);
-
+#endif
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -821,6 +961,10 @@ int automap_handler(window *wind, d_event *event, automap *am)
 #ifdef OGL
 			gr_free_bitmap_data(&am->automap_background);
 #endif
+#ifdef USE_OPENVR
+			if (am->automap_background_scaled != NULL)
+				gr_free_bitmap(am->automap_background_scaled);
+#endif
 			d_free(am->edges);
 			d_free(am->drawingListBright);
 			d_free(am);
@@ -928,8 +1072,20 @@ void do_automap()
 	if (pcx_error != PCX_ERROR_NONE)
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+	automap_vr_offset(&offset_x, &offset_y);
+#endif
+#ifdef USE_OPENVR
+	automap_update_layout(am);
+	am->automap_background_scaled = gr_create_bitmap(am->background_w, am->background_h);
+	if (am->automap_background_scaled != NULL)
+		gr_bitmap_scale_to(&am->automap_background, am->automap_background_scaled);
+	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, am->view_x, am->view_y, am->view_w, am->view_h);
+#else
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-
+#endif
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }
