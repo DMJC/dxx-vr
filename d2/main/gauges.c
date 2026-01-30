@@ -1034,11 +1034,23 @@ void hud_show_keys(void)
 	red=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ];
 
 	if (Players[pnum].flags & PLAYER_FLAGS_BLUE_KEY)
+#ifdef USE_OPENVR
 		hud_bitblt_free(FSPACX(2),y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
+#else
+		hud_bitblt_free(FSPACX(2),y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
+#endif		
 	if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)
+#ifdef USE_OPENVR
 		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
+#else
+		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
+#endif
 	if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)
+#ifdef USE_OPENVR
 		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
+#else
+		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);		
+#endif
 }
 
 #ifdef NETWORK
@@ -1199,7 +1211,12 @@ void show_bomb_count(int x,int y,int bg_color,int always_show,int right_align)
 {
 	int bomb,count,w=0,h=0,aw=0;
 	char txt[5],*t;
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
 
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	int pnum = get_pnum_for_hud();
 
 	bomb = which_bomb();
@@ -1223,7 +1240,7 @@ void show_bomb_count(int x,int y,int bg_color,int always_show,int right_align)
 	if (right_align)
 		gr_get_string_size(txt, &w, &h, &aw );
 
-	gr_string(x-w,y,txt);
+	gr_string(x-w + offset_x,y + offset_y,txt);
 }
 
 void draw_primary_ammo_info(int ammo_count)
@@ -1450,7 +1467,12 @@ void hud_show_weapons(void)
 		hud_show_weapons_mode(0,1,x1,y);
 		hud_show_weapons_mode(1,1,x2,y);
 		gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
-		(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
+
+#ifdef USE_OPENVR
+		gr_printf(x2 + offset_x, y-(LINE_SPACING*4) + offset_y,"%i", f2ir(Players[pnum].shields));
+#else
+		gr_printf(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
+#endif
 		gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 #ifdef USE_OPENVR
 		gr_printf(x1 + offset_x, y-(LINE_SPACING*4) + offset_y,"%i", f2ir(Players[pnum].energy));
@@ -1650,10 +1672,11 @@ void hud_show_lives()
 		grs_bitmap * bm = &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ];
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
-		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
 #ifdef USE_OPENVR
+		hud_bitblt_free(x,FSPACY(1) + offset_x,HUD_SCALE_X_AR(bm->bm_w) + offset_y,HUD_SCALE_Y_AR(bm->bm_h),bm);
 		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x, FSPACY(1) + offset_y, " x %d", Players[pnum].lives-1);
 #else
+		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
 		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
 #endif
 	}
@@ -1976,7 +1999,7 @@ void draw_energy_bar(int energy)
 			if (x2 > HUD_SCALE_X(LEFT_ENERGY_GAUGE_W) - (y*aplitscale)/3)
 				x2 = HUD_SCALE_X(LEFT_ENERGY_GAUGE_W) - (y*aplitscale)/3;
 #ifdef USE_OPENVR
-			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)+offset_x), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)+offset_y), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)+offset_x), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)+offset_y) );
+			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X) + offset_x), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y) + offset_y), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X) + offset_x), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y) + offset_y) );
 #else
 			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)) );
 #endif
@@ -2166,8 +2189,6 @@ void draw_numerical_display(int shield, int energy)
 #ifdef USE_OPENVR
         int offset_x = 0;
         int offset_y = 0;
-		float scale_x = 1;
-		float scale_y = 1;
         cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_curfont( GAME_FONT );
@@ -2180,8 +2201,8 @@ void draw_numerical_display(int shield, int energy)
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
 #ifdef USE_OPENVR
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2) + offset_x,
-			(grd_curscreen->sc_h/1.365),"%d",shield);
+	gr_printf(	((grd_curscreen->sc_w * GAUGE_SCALE) / 1.951f)-(sw/2) + offset_x,
+			((grd_curscreen->sc_h * GAUGE_SCALE) / 1.365f) + offset_y,"%d",shield);
 #else
 	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2),
 			(grd_curscreen->sc_h/1.365),"%d",shield);
@@ -2190,8 +2211,8 @@ void draw_numerical_display(int shield, int energy)
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
 #ifdef USE_OPENVR
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2) + offset_x,
-			(grd_curscreen->sc_h/1.5),"%d",energy);
+	gr_printf(	((grd_curscreen->sc_w * GAUGE_SCALE) / 1.951f)-(ew/2) + offset_x,
+			((grd_curscreen->sc_h * GAUGE_SCALE) / 1.5f) + offset_y,"%d",energy);
 #else
 	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2),
 			(grd_curscreen->sc_h/1.5),"%d",energy);
@@ -2573,8 +2594,11 @@ void sb_draw_energy_bar(int energy)
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
+#ifdef USE_OPENVR
+	hud_bitblt(HUD_SCALE_X(SB_ENERGY_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_ENERGY)]);
+#else
 	hud_bitblt(HUD_SCALE_X(SB_ENERGY_GAUGE_X), HUD_SCALE_Y(SB_ENERGY_GAUGE_Y), &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_ENERGY)]);
-
+#endif
 	erase_height = HUD_SCALE_Y((100 - energy) * SB_ENERGY_GAUGE_H / 100);
 	if (erase_height > 0) {
 		gr_setcolor(0);
@@ -2585,7 +2609,7 @@ void sb_draw_energy_bar(int energy)
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
 #ifdef USE_OPENVR
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y, "%d", energy);
+	gr_printf((grd_curscreen->sc_w/3)-(ew/2) + offset_x,HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y,"%d",energy);
 #else
 	gr_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)),"%d",energy);
 #endif
