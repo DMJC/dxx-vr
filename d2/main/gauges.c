@@ -2513,7 +2513,12 @@ void draw_static(int win)
 #ifndef OGL
 	int x,y;
 #endif
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
 
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	static_time[win] += FrameTime;
 	if (static_time[win] >= vc->play_time) {
 		weapon_box_user[win] = WBU_WEAPON;
@@ -2527,6 +2532,8 @@ void draw_static(int win)
 	bmp = &GameBitmaps[vc->frames[framenum].index];
 
 	gr_set_current_canvas(NULL);
+
+
 #ifndef OGL
 	for (x=gauge_boxes[boxofs+win].left;x<gauge_boxes[boxofs+win].right;x+=bmp->bm_w)
 		for (y=gauge_boxes[boxofs+win].top;y<gauge_boxes[boxofs+win].bot;y+=bmp->bm_h)
@@ -2534,12 +2541,19 @@ void draw_static(int win)
 #else
 	if (HIRESMODE)
 	{
+
+#ifdef USE_OPENVR
+		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].left) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+win].top)+offset_y,bmp);
+		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].left) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+win].bot-bmp->bm_h)+offset_y,bmp);
+		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].right-bmp->bm_w) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+win].top)+offset_y,bmp);
+		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].right-bmp->bm_w) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+win].bot-bmp->bm_h)+offset_y,bmp);
+#else
 		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].left),HUD_SCALE_Y(gauge_boxes[boxofs+win].top),bmp);
 		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].left),HUD_SCALE_Y(gauge_boxes[boxofs+win].bot-bmp->bm_h),bmp);
 		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].right-bmp->bm_w),HUD_SCALE_Y(gauge_boxes[boxofs+win].top),bmp);
 		hud_bitblt(HUD_SCALE_X(gauge_boxes[boxofs+win].right-bmp->bm_w),HUD_SCALE_Y(gauge_boxes[boxofs+win].bot-bmp->bm_h),bmp);
+#endif
 	}
-
 #endif
 
 	gr_set_current_canvas(NULL);

@@ -79,6 +79,13 @@ static vms_matrix vr_last_head_orient;
 static int vr_head_turn_initialized = 0;
 static int vr_head_turn_enabled_prev = 0;
 
+void render_reset_vr_view(void)
+{
+	vr_head_turn_initialized = 0;
+	vr_head_turn_enabled_prev = 0;
+	vr_last_head_orient = vmd_identity_matrix;
+}
+
 //used for checking if points have been rotated
 int	Clear_window_color=-1;
 int	Clear_window=2;	// 1 = Clear whole background window, 2 = clear view portals into rest of world, 0 = no clear

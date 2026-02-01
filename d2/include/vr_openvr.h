@@ -14,6 +14,7 @@ void vr_openvr_init_gl(void);
 void vr_openvr_shutdown(void);
 int vr_openvr_active(void);
 void vr_openvr_begin_frame(void);
+void vr_openvr_recenter(void);
 fix vr_openvr_eye_offset(int eye);
 void vr_openvr_adjust_eye_offset(float delta_meters);
 int vr_openvr_eye_projection(int eye, float *left, float *right, float *bottom, float *top);

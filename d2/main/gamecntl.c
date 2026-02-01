@@ -842,6 +842,15 @@ int HandleSystemKey(int key)
 		KEY_MAC(case KEY_COMMAND+KEY_1:)
 		case KEY_F1:				if (Game_mode & GM_MULTI) show_netgame_help(); else show_help();	break;
 
+		case KEY_HOME:
+			if (vr_openvr_active())
+			{
+				vr_openvr_recenter();
+				render_reset_vr_view();
+				con_printf(CON_NORMAL, "VR view recentered.\n");
+			}
+			break;
+
 		KEY_MAC(case KEY_COMMAND+KEY_2:)
 		case KEY_F2:
 			{

@@ -45,7 +45,7 @@ extern int Max_debris_objects; // How many debris objects to create
 extern int Clear_window;    // 1 = Clear whole background window, 2 = clear view portals into rest of world, 0 = no clear
 
 void render_frame(fix eye_offset, int window_num);  //draws the world into the current canvas
-
+void render_reset_vr_view(void);
 // cycle the flashing light for when mine destroyed
 void flash_frame();
 

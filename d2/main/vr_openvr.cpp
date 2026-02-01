@@ -396,6 +396,31 @@ void vr_openvr_begin_frame(void)
 #endif
 }
 
+template <typename T>
+static auto vr_openvr_reset_seated_zero_pose(T *system) -> decltype(system->ResetSeatedZeroPose(), void())
+{
+	system->ResetSeatedZeroPose();
+}
+
+static void vr_openvr_reset_seated_zero_pose(...)
+{
+}
+
+void vr_openvr_recenter(void)
+{
+#ifdef USE_OPENVR
+	if (!vr_openvr_active() || !vr_system)
+		return;
+
+	vr_openvr_reset_seated_zero_pose(vr_system);
+	vr_head_orient = vmd_identity_matrix;
+	vr_head_pos.x = 0;
+	vr_head_pos.y = 0;
+	vr_head_pos.z = 0;
+	vr_has_pose = false;
+#endif
+}
+
 fix vr_openvr_eye_offset(int eye)
 {
 #ifdef USE_OPENVR

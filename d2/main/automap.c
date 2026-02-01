@@ -667,33 +667,47 @@ void draw_automap(automap *am)
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
 
-	gr_set_current_canvas(NULL);
+gr_set_current_canvas(NULL);
 #ifdef OGL
 	{
 		int offset_x = 0;
 		int offset_y = 0;
-		int scaled_w = (SWIDTH * 4) / 10;
-		int scaled_h = (SHEIGHT * 4) / 10;
+		int scaled_w = (SWIDTH * 7) / 10;
+		int scaled_h = (SHEIGHT * 7) / 10;
 		int scaled_x = (SWIDTH - scaled_w) / 2;
 		int scaled_y = (SHEIGHT - scaled_h) / 2;
+		GLboolean depth_enabled = GL_FALSE;
 #ifdef USE_OPENVR
 		automap_vr_offset(&offset_x, &offset_y);
 #endif
+		scaled_w = (scaled_w * 7) / 10;
+		scaled_h = (scaled_h * 7) / 10;
+		scaled_x = (SWIDTH - scaled_w) / 2;
+		scaled_y = (SHEIGHT - scaled_h) / 2;
 		scaled_x += offset_x;
 		scaled_y += offset_y;
+		depth_enabled = glIsEnabled(GL_DEPTH_TEST);
+		if (depth_enabled)
+			glDisable(GL_DEPTH_TEST);
 		ogl_ubitmapm_cs(scaled_x, scaled_y, scaled_w, scaled_h, &am->render_canvas->cv_bitmap, -1, F1_0);
+		if (depth_enabled)
+			glEnable(GL_DEPTH_TEST);
 	}
 #else
 	{
 		int offset_x = 0;
 		int offset_y = 0;
-		int scaled_w = (SWIDTH * 4) / 10;
-		int scaled_h = (SHEIGHT * 4) / 10;
+		int scaled_w = (SWIDTH * 7) / 10;
+		int scaled_h = (SHEIGHT * 7) / 10;
 		int scaled_x = (SWIDTH - scaled_w) / 2;
 		int scaled_y = (SHEIGHT - scaled_h) / 2;
 #ifdef USE_OPENVR
 		automap_vr_offset(&offset_x, &offset_y);
 #endif
+		scaled_w = (scaled_w * 7) / 10;
+		scaled_h = (scaled_h * 7) / 10;
+		scaled_x = (SWIDTH - scaled_w) / 2;
+		scaled_y = (SHEIGHT - scaled_h) / 2;
 		scaled_x += offset_x;
 		scaled_y += offset_y;
 		grs_point vertbuf[3] = {
