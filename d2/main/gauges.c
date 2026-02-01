@@ -901,14 +901,13 @@ void sb_show_score()
 
 	//erase old score
 	gr_setcolor(BM_XRGB(0,0,0));
-//	gr_rect(x,y,HUD_SCALE_X(SB_SCORE_RIGHT),y+LINE_SPACING);
 	gr_rect(draw_x, draw_y, draw_right, draw_y + LINE_SPACING);
+
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 	else
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
-//	gr_string(x,y,score_str);
 	gr_string(draw_x, draw_y, score_str);
 }
 
@@ -943,19 +942,17 @@ void sb_show_score_added()
 		else
 			sprintf(score_str, "%5d", score_display);
 
-		gr_get_string_size(score_str, &w, &h, &aw );
-		x = HUD_SCALE_X(SB_SCORE_ADDED_RIGHT)-w-FSPACX(1);
-		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-
-
+	gr_get_string_size(score_str, &w, &h, &aw );
+	x = HUD_SCALE_X(SB_SCORE_ADDED_RIGHT)-w-FSPACX(1);
+	gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-    gr_string(x + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y, score_str);
+	gr_string(x + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y, score_str);
 #else
-    gr_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
+	gr_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
 #endif
 	} else {
 		//erase old score
@@ -1799,6 +1796,7 @@ void sb_show_lives()
 #else
 	gr_rect(HUD_SCALE_X(x), HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y+bm->bm_h));
 #endif
+
 	if (Players[pnum].lives-1 > 0) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
