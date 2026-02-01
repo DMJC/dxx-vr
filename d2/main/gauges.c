@@ -889,17 +889,27 @@ void sb_show_score()
 
 	x = HUD_SCALE_X(SB_SCORE_RIGHT)-w-FSPACX(1);
 	y = HUD_SCALE_Y(SB_SCORE_Y);
+#ifdef USE_OPENVR
+	int draw_x = x + offset_x;
+	int draw_y = y + offset_y;
+	int draw_right = HUD_SCALE_X(SB_SCORE_RIGHT) + offset_x;
+#else
+	int draw_x = x;
+	int draw_y = y;
+	int draw_right = HUD_SCALE_X(SB_SCORE_RIGHT);
+#endif
 
 	//erase old score
 	gr_setcolor(BM_XRGB(0,0,0));
-	gr_rect(x,y,HUD_SCALE_X(SB_SCORE_RIGHT),y+LINE_SPACING);
-
+//	gr_rect(x,y,HUD_SCALE_X(SB_SCORE_RIGHT),y+LINE_SPACING);
+	gr_rect(draw_x, draw_y, draw_right, draw_y + LINE_SPACING);
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 	else
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
-	gr_string(x,y,score_str);
+//	gr_string(x,y,score_str);
+	gr_string(draw_x, draw_y, score_str);
 }
 
 void sb_show_score_added()
@@ -936,19 +946,29 @@ void sb_show_score_added()
 		gr_get_string_size(score_str, &w, &h, &aw );
 		x = HUD_SCALE_X(SB_SCORE_ADDED_RIGHT)-w-FSPACX(1);
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
+
+
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-		gr_string(x + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y, score_str);
+    gr_string(x + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y, score_str);
 #else
-		gr_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
+    gr_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
 #endif
 	} else {
 		//erase old score
 		gr_setcolor(BM_XRGB(0,0,0));
+#ifdef USE_OPENVR
+		int offset_x = 0;
+		int offset_y = 0;
+
+		cockpit_gauge_offset(&offset_x, &offset_y);
+		gr_rect(x + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y, HUD_SCALE_X(SB_SCORE_ADDED_RIGHT) + offset_x, HUD_SCALE_Y(SB_SCORE_ADDED_Y) + offset_y + LINE_SPACING);
+#else
 		gr_rect(x,HUD_SCALE_Y(SB_SCORE_ADDED_Y),HUD_SCALE_X(SB_SCORE_ADDED_RIGHT),HUD_SCALE_Y(SB_SCORE_ADDED_Y)+LINE_SPACING);
+#endif
 		score_time = 0;
 		score_display = 0;
 	}
@@ -1756,7 +1776,11 @@ void sb_show_lives()
 		sprintf(killed_str, "%5d", Players[pnum].net_killed_total);
 		gr_get_string_size(killed_str, &w, &h, &aw);
 		gr_setcolor(BM_XRGB(0,0,0));
+#ifdef USE_OPENVR
+		gr_rect(last_x[HIRESMODE] + offset_x, HUD_SCALE_Y(y) + offset_y, HUD_SCALE_X(SB_SCORE_RIGHT) + offset_x, HUD_SCALE_Y(y) + offset_y + LINE_SPACING);
+#else
 		gr_rect(last_x[HIRESMODE], HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y)+LINE_SPACING);
+#endif
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1);
 		x = HUD_SCALE_X(SB_SCORE_RIGHT)-w-FSPACX(1);
 #ifdef USE_OPENVR
@@ -1770,16 +1794,20 @@ void sb_show_lives()
 
 	//erase old icons
 	gr_setcolor(BM_XRGB(0,0,0));
+#ifdef USE_OPENVR
+	gr_rect(HUD_SCALE_X(x) + offset_x, HUD_SCALE_Y(y) + offset_y, HUD_SCALE_X(SB_SCORE_RIGHT) + offset_x, HUD_SCALE_Y(y + bm->bm_h) + offset_y);
+#else
 	gr_rect(HUD_SCALE_X(x), HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y+bm->bm_h));
-
+#endif
 	if (Players[pnum].lives-1 > 0) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 		PAGE_IN_GAUGE( GAUGE_LIVES );
-		hud_bitblt_free(HUD_SCALE_X(x),HUD_SCALE_Y(y),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
 #ifdef USE_OPENVR
+		hud_bitblt_free(HUD_SCALE_X(x) + offset_x, HUD_SCALE_Y(y) + offset_y, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
 		gr_printf(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w) + offset_x, HUD_SCALE_Y(y) + offset_y, " x %d", Players[pnum].lives-1);
 #else
+		hud_bitblt_free(HUD_SCALE_X(x),HUD_SCALE_Y(y),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
 		gr_printf(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y(y), " x %d", Players[pnum].lives-1);
 #endif
 	}
@@ -2662,7 +2690,11 @@ void sb_draw_energy_bar(int energy)
 	erase_height = HUD_SCALE_Y((100 - energy) * SB_ENERGY_GAUGE_H / 100);
 	if (erase_height > 0) {
 		gr_setcolor(0);
+#ifdef USE_OPENVR
+		gr_urect(HUD_SCALE_X(SB_ENERGY_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + offset_y, HUD_SCALE_X(SB_ENERGY_GAUGE_X) + HUD_SCALE_X(SB_ENERGY_GAUGE_W) - 1 + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + erase_height - 1 + offset_y);
+#else
 		gr_urect(HUD_SCALE_X(SB_ENERGY_GAUGE_X), HUD_SCALE_Y(SB_ENERGY_GAUGE_Y), HUD_SCALE_X(SB_ENERGY_GAUGE_X) + HUD_SCALE_X(SB_ENERGY_GAUGE_W) - 1, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + erase_height - 1);
+#endif
 	}
 
 	//draw numbers
@@ -2695,7 +2727,11 @@ void sb_draw_afterburner()
 	erase_height = HUD_SCALE_Y(fixmul((f1_0 - Players[pnum].afterburner_charge),SB_AFTERBURNER_GAUGE_H-1));
 	gr_setcolor( 0 );
 	for (i=0;i<erase_height;i++)
+#ifdef USE_OPENVR
+		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W)) + offset_x), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + i + offset_y) );
+#else
 		gr_uline( i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X-1)), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i), i2f(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X+(SB_AFTERBURNER_GAUGE_W))), i2f(HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y)+i) );
+#endif
 	//draw legend
 	if (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER)
 		gr_set_fontcolor(BM_XRGB(45,0,0),-1 );
