@@ -748,10 +748,20 @@ int get_pnum_for_hud()
 		return Player_num;
 }
 
+static inline int vr_hud_top_margin_y(void)
+{
+#ifdef USE_OPENVR
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
+		return grd_curcanv->cv_bitmap.bm_h / 10;
+#endif
+	return 0;
+}
+
 void hud_show_score()
 {
 	char	score_str[20];
 	int	w, h, aw;
+	int top_margin;
 
 	int pnum = get_pnum_for_hud();
 
@@ -767,6 +777,7 @@ void hud_show_score()
   	}
 
 	gr_get_string_size(score_str, &w, &h, &aw );
+	top_margin = vr_hud_top_margin_y();
 
 	if (Color_0_31_0 == -1)
 		Color_0_31_0 = BM_XRGB(0,31,0);
@@ -775,9 +786,9 @@ void hud_show_score()
     int offset_x = 0;
     int offset_y = 0;
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) + offset_x, FSPACY(1) + offset_y, score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) + offset_x, FSPACY(1) + offset_y + top_margin, score_str);
 #else
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1) + top_margin, score_str);
 #endif
 }
 
@@ -818,6 +829,7 @@ void hud_show_score_added()
 	int	color;
 	int	w, h, aw;
 	char	score_str[20];
+	int top_margin;
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		return;
@@ -826,6 +838,7 @@ void hud_show_score_added()
 		return;
 
 	gr_set_curfont( GAME_FONT );
+	top_margin = vr_hud_top_margin_y();
 
 	score_time -= FrameTime;
 	if (score_time > 0) {
@@ -843,7 +856,7 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
+		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1) + top_margin, score_str);
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -1693,6 +1706,7 @@ void hud_show_shield(void)
 void hud_show_lives()
 {
 	int x;
+	int top_margin;
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
@@ -1704,6 +1718,8 @@ void hud_show_lives()
 	if (HUD_toolong)
 		return;
 
+	top_margin = vr_hud_top_margin_y();
+
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
 		x = HUD_SCALE_X(7);
 	else
@@ -1713,9 +1729,9 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
-		gr_printf(x + offset_x, FSPACY(1) + offset_y, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		gr_printf(x + offset_x, FSPACY(1) + offset_y + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 #else
-		gr_printf(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		gr_printf(x, FSPACY(1) + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 #endif
 	}
 	else if (Players[pnum].lives > 1)  {
@@ -1724,11 +1740,11 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 #ifdef USE_OPENVR
-		hud_bitblt_free(x,FSPACY(1) + offset_x,HUD_SCALE_X_AR(bm->bm_w) + offset_y,HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x, FSPACY(1) + offset_y, " x %d", Players[pnum].lives-1);
+		hud_bitblt_free(x + offset_x, FSPACY(1) + offset_y + top_margin, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
+		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x, FSPACY(1) + offset_y + top_margin, " x %d", Players[pnum].lives-1);
 #else
-		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
+		hud_bitblt_free(x, FSPACY(1) + top_margin, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
+		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1) + top_margin, " x %d", Players[pnum].lives-1);
 #endif
 	}
 
@@ -2672,6 +2688,7 @@ void sb_draw_energy_bar(int energy)
 {
 	int erase_height;
 	int ew, eh, eaw;
+	int energy_x;
 
 	PAGE_IN_GAUGE( SB_GAUGE_ENERGY );
 #ifdef USE_OPENVR
@@ -2698,10 +2715,11 @@ void sb_draw_energy_bar(int energy)
 	//draw numbers
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
+	energy_x = HUD_SCALE_X(SB_ENERGY_GAUGE_X) + (HUD_SCALE_X(SB_ENERGY_GAUGE_W) - ew) / 2;
 #ifdef USE_OPENVR
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2) + offset_x,HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y,"%d",energy);
+	gr_printf(energy_x + offset_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)) + offset_y, "%d", energy);
 #else
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)),"%d",energy);
+	gr_printf(energy_x, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y + SB_ENERGY_GAUGE_H - GAME_FONT->ft_h - (GAME_FONT->ft_h / 4)), "%d", energy);
 #endif
 	gr_set_current_canvas(NULL);
 }
@@ -2749,6 +2767,8 @@ void sb_draw_shield_num(int shield)
 {
 	//draw numbers
 	int sw, sh, saw;
+	int bm_num = shield >= 100 ? 9 : (shield / 10);
+	int shield_x;
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
@@ -2759,10 +2779,12 @@ void sb_draw_shield_num(int shield)
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
+	PAGE_IN_GAUGE( GAUGE_SHIELDS+9-bm_num );
+	shield_x = HUD_SCALE_X(SB_SHIELD_GAUGE_X) + (HUD_SCALE_X(GameBitmaps[GET_GAUGE_INDEX(GAUGE_SHIELDS+9-bm_num)].bm_w) - sw) / 2;
 #ifdef USE_OPENVR
-	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2) + offset_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y) + offset_y, "%d", shield);
+	gr_printf(shield_x + offset_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y) + offset_y, "%d", shield);
 #else
-	gr_printf((grd_curscreen->sc_w/2.266)-(sw/2), HUD_SCALE_Y(SB_SHIELD_NUM_Y), "%d", shield);
+	gr_printf(shield_x, HUD_SCALE_Y(SB_SHIELD_NUM_Y), "%d", shield);
 #endif
 }
 
