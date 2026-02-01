@@ -2536,7 +2536,11 @@ void draw_weapon_box(int weapon_type,int weapon_num)
 
 		gr_settransblend(fade_value, GR_BLEND_NORMAL);
 #ifdef USE_OPENVR
-		gr_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top),HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot) + offset_y);
+//		gr_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left) + offset_x,HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top),HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot) + offset_y);
+		gr_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left) + offset_x,
+			HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top) + offset_y,
+			HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right) + offset_x,
+			HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot) + offset_y);
 #else
 		gr_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top),HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot));
 #endif
