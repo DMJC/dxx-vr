@@ -1032,7 +1032,8 @@ void do_automap()
     int offset_x = 0;
     int offset_y = 0;
 	automap_vr_offset(&offset_x, &offset_y);
-	gr_init_sub_canvas(&am->automap_view + offset_x, am->render_canvas + offset_y, (SWIDTH/23)*.7, (SHEIGHT/6)*.7, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
+	gr_init_sub_canvas(&am->automap_view, am->render_canvas, (SWIDTH/23)*.7 + offset_x, (SHEIGHT/6)*.7 + offset_y, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
+//	gr_init_sub_canvas(&am->automap_view + offset_x, am->render_canvas + offset_y, (SWIDTH/23)*.7, (SHEIGHT/6)*.7, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
 #else
 	gr_init_sub_canvas(&am->automap_view, am->render_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
 #endif
