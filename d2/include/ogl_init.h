@@ -73,6 +73,7 @@ extern int ogl_rgba_internalformat;
 extern int ogl_rgb_internalformat;
 
 void ogl_init_shared_palette(void);
+void ogl_bindbmtex(grs_bitmap *bm);
 
 extern int gl_initialized;
 

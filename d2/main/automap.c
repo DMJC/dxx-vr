@@ -667,7 +667,7 @@ void draw_automap(automap *am)
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
 
-gr_set_current_canvas(NULL);
+	gr_set_current_canvas(NULL);
 #ifdef OGL
 	{
 		int offset_x = 0;
@@ -689,6 +689,9 @@ gr_set_current_canvas(NULL);
 		depth_enabled = glIsEnabled(GL_DEPTH_TEST);
 		if (depth_enabled)
 			glDisable(GL_DEPTH_TEST);
+		ogl_bindbmtex(&am->render_canvas->cv_bitmap);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		ogl_ubitmapm_cs(scaled_x, scaled_y, scaled_w, scaled_h, &am->render_canvas->cv_bitmap, -1, F1_0);
 		if (depth_enabled)
 			glEnable(GL_DEPTH_TEST);
@@ -1025,8 +1028,14 @@ void do_automap()
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
 //	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
+#ifdef USE_OPENVR
+    int offset_x = 0;
+    int offset_y = 0;
+	automap_vr_offset(&offset_x, &offset_y);
+	gr_init_sub_canvas(&am->automap_view + offset_x, am->render_canvas + offset_y, (SWIDTH/23)*.7, (SHEIGHT/6)*.7, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
+#else
 	gr_init_sub_canvas(&am->automap_view, am->render_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-
+#endif
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }

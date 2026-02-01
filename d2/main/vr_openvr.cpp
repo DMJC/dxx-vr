@@ -600,7 +600,37 @@ void vr_openvr_submit_eyes(void)
 #ifdef OGL
 	if (!vr_openvr_active() || !vr_compositor || !vr_gl_ready)
 		return;
-
+//
+	for (int eye = 0; eye < 2; eye++)
+	{
+		GLint prev_fbo = 0;
+		GLint prev_viewport[4] = {0, 0, 0, 0};
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
+		glGetIntegerv(GL_VIEWPORT, prev_viewport);
+		glBindFramebuffer(GL_FRAMEBUFFER, vr_eye_fbo[eye]);
+		glViewport(0, 0, (GLint)vr_render_width, (GLint)vr_render_height);
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+#ifdef OGLES
+		glOrthof(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+#else
+		glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+#endif
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		ogl_do_palfx();
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_fbo);
+		glViewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
+	}
+//
 	vr::Texture_t left = {(void *)(uintptr_t)vr_eye_color[0], vr::TextureType_OpenGL, vr::ColorSpace_Auto};
 	vr::Texture_t right = {(void *)(uintptr_t)vr_eye_color[1], vr::TextureType_OpenGL, vr::ColorSpace_Auto};
 	vr_compositor->Submit(vr::Eye_Left, &left);

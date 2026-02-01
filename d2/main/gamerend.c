@@ -1068,7 +1068,16 @@ static void cockpit_draw_offset(int *x, int *y)
 	*y = offset_y;
 }
 
-static inline double cockpit_vr_scale(void)
+static inline double cockpit_vr_scale_x(void)
+{
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+		return 0.65;
+#endif
+	return 1.0;
+}
+
+static inline double cockpit_vr_scale_y(void)
 {
 #ifdef USE_OPENVR
 	if (vr_openvr_active())
@@ -1098,6 +1107,7 @@ static inline void cockpit_vr_center(int *x, int *y)
 			const float y_ndc = (t + b) / (t - b);
 			center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
 			center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+			
 		}
 	}
 #endif
@@ -1113,13 +1123,14 @@ static inline void cockpit_vr_transform_rect(int *x, int *y, int *w, int *h)
 	{
 		int center_x = 0;
 		int center_y = 0;
-		const double scale = cockpit_vr_scale();
+		const double scale_x = cockpit_vr_scale_x();
+		const double scale_y = cockpit_vr_scale_y();
 
 		cockpit_vr_center(&center_x, &center_y);
-		*x = (int)lround(scale * (*x) + (1.0 - scale) * center_x);
-		*y = (int)lround(scale * (*y) + (1.0 - scale) * center_y);
-		*w = (int)lround(scale * (*w));
-		*h = (int)lround(scale * (*h));
+		*x = (int)lround(scale_x * (*x) + (1.0 - scale_x) * center_x);
+		*y = (int)lround(scale_y * (*y) + (1.0 - scale_y) * center_y);
+		*w = (int)lround(scale_x * (*w));
+		*h = (int)lround(scale_y * (*h));
 	}
 #endif
 }
