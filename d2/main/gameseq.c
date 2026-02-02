@@ -935,19 +935,24 @@ void DoEndLevelScoreGlitz(int network)
 #ifdef NETWORK
 	if ( network && (Game_mode & GM_NETWORK) )
 	{
-		if (EMULATING_D1)
-		newmenu_do2(NULL, title, c, m, multi_endlevel_poll1, NULL, 0, STARS_BACKGROUND);
-		if (EMULATING_D1)
-			newmenu_set_vr_offset(0);
+	
+		if (EMULATING_D1){
+    		newmenu_do2(NULL, title, c, m, multi_endlevel_poll1, NULL, 0, STARS_BACKGROUND);
+        }else{
+        	set_screen_mode(SCREEN_MENU);
+    		newmenu_do2(NULL, title, c, m, multi_endlevel_poll1, NULL, 0, STARS_BACKGROUND);
+        }
 	}
 	else
 #endif
 		// NOTE LINK TO ABOVE!!!
 	{
-		if (EMULATING_D1)
-		newmenu_do2(NULL, title, c, m, NULL, NULL, 0, STARS_BACKGROUND);
-		if (EMULATING_D1)
-			newmenu_set_vr_offset(0);
+		if (EMULATING_D1){
+			newmenu_do2(NULL, title, c, m, NULL, NULL, 0, STARS_BACKGROUND);
+		}else{
+        	set_screen_mode(SCREEN_MENU);
+		    newmenu_do2(NULL, title, c, m, NULL, NULL, 0, STARS_BACKGROUND);
+        }
 	}
 }
 
