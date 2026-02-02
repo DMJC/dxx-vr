@@ -752,7 +752,7 @@ static inline int vr_hud_top_margin_y(void)
 {
 #ifdef USE_OPENVR
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
-		return grd_curcanv->cv_bitmap.bm_h / 10;
+		return grd_curcanv->cv_bitmap.bm_h / 20;
 #endif
 	return 0;
 }
@@ -762,6 +762,7 @@ void hud_show_score()
 	char	score_str[20];
 	int	w, h, aw;
 	int top_margin;
+
 
 	int pnum = get_pnum_for_hud();
 
@@ -785,8 +786,13 @@ void hud_show_score()
 #ifdef USE_OPENVR
     int offset_x = 0;
     int offset_y = 0;
+    int cockpit_offset_x = 0;
+    int cockpit_offset_y = 0;
+	cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 8;
+	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;    
+    
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) + offset_x, FSPACY(1) + offset_y + top_margin, score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) - offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
 #else
 	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1) + top_margin, score_str);
 #endif
@@ -856,7 +862,18 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;        
+        int cockpit_offset_x = 0;
+        int cockpit_offset_y = 0;
+	    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 8;
+    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;    
+	    cockpit_gauge_offset(&offset_x, &offset_y);
+    	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) - offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);		
+#else	
 		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1) + top_margin, score_str);
+#endif
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -1710,6 +1727,8 @@ void hud_show_lives()
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
+	int cockpit_offset_x = 0;
+	int cockpit_offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
@@ -1720,16 +1739,19 @@ void hud_show_lives()
 
 	top_margin = vr_hud_top_margin_y();
 
-	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
-		x = HUD_SCALE_X(7);
-	else
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
+		x = HUD_SCALE_X(8);
+		cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 8;
+		cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;
+	} else
 		x = FSPACX(2);
 
 	if (Game_mode & GM_MULTI) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
-		gr_printf(x + offset_x, FSPACY(1) + offset_y + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+//		gr_printf(x + offset_x, FSPACY(1) + offset_y + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		gr_printf(x + offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 #else
 		gr_printf(x, FSPACY(1) + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 #endif
@@ -1740,8 +1762,10 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 #ifdef USE_OPENVR
-		hud_bitblt_free(x + offset_x, FSPACY(1) + offset_y + top_margin, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x, FSPACY(1) + offset_y + top_margin, " x %d", Players[pnum].lives-1);
+//		hud_bitblt_free(x + offset_x, FSPACY(1) + offset_y + top_margin, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
+//		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x, FSPACY(1) + offset_y + top_margin, " x %d", Players[pnum].lives-1);
+		hud_bitblt_free(x + offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
+		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x + offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, " x %d", Players[pnum].lives-1);
 #else
 		hud_bitblt_free(x, FSPACY(1) + top_margin, HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y_AR(bm->bm_h), bm);
 		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1) + top_margin, " x %d", Players[pnum].lives-1);

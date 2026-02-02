@@ -398,6 +398,12 @@ fix Show_view_text_timer = -1;
 
 void draw_window_label()
 {
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;
+
+        cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	if ( Show_view_text_timer > 0 )
 	{
 		char *viewer_name,*control_name;
@@ -439,8 +445,11 @@ void draw_window_label()
 
 		gr_set_curfont(GAME_FONT);
 		gr_set_fontcolor(BM_XRGB(31,0,0),-1);
+#ifdef USE_OPENVR
+		gr_printf( 0x8000 + offset_x, (SHEIGHT/10) + offset_y, "%li: %s [%s] View - %s",Viewer-Objects, viewer_name, viewer_id, control_name );
+#else
 		gr_printf( 0x8000, (SHEIGHT/10), "%li: %s [%s] View - %s",Viewer-Objects, viewer_name, viewer_id, control_name );
-
+#endif
 	}
 }
 
@@ -498,7 +507,11 @@ void game_draw_hud_stuff()
 #ifdef NETWORK
 	game_draw_multi_message();
 #endif
-
+#ifdef USE_OPENVR
+        int offset_x = 0;
+        int offset_y = 0;
+        cockpit_gauge_offset(&offset_x, &offset_y);
+#endif
 	game_draw_marker_message();
 
 	if ((Newdemo_state == ND_STATE_PLAYBACK) || (Newdemo_state == ND_STATE_RECORDING)) {
@@ -528,7 +541,7 @@ void game_draw_hud_stuff()
 		if (PlayerCfg.CurrentCockpitMode != CM_REAR_VIEW &&
 			(!PlayerCfg.AutoDemoHideUi || !Newdemo_is_autorecord)) {
 			if (PlayerCfg.DemoRecordingIndicator == 0) {
-				gr_string(0x8000, y, message);
+				gr_string(0x8000 + offset_x, y + offset_y, message);
 			}
 			else if (PlayerCfg.DemoRecordingIndicator == 1) {
 				gr_setcolor(BM_XRGB(27, 0, 0));
