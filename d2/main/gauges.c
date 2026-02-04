@@ -762,8 +762,6 @@ void hud_show_score()
 	char	score_str[20];
 	int	w, h, aw;
 	int top_margin;
-
-
 	int pnum = get_pnum_for_hud();
 
 	if (HUD_toolong)
@@ -788,13 +786,16 @@ void hud_show_score()
     int offset_y = 0;
     int cockpit_offset_x = 0;
     int cockpit_offset_y = 0;
-	cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 8;
-	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;    
+
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
+		cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 10;
+		cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 10;
+	}
     
 	cockpit_gauge_offset(&offset_x, &offset_y);
 	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) - offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
 #else
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1) + top_margin, score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
 #endif
 }
 
@@ -867,10 +868,12 @@ void hud_show_score_added()
         int offset_y = 0;        
         int cockpit_offset_x = 0;
         int cockpit_offset_y = 0;
-	    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 8;
-    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;    
+    	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
+		    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 10;
+	    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 10;
+    	}
 	    cockpit_gauge_offset(&offset_x, &offset_y);
-    	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) - offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);		
+		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) + offset_x + cockpit_offset_x, LINE_SPACING+FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
 #else	
 		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1) + top_margin, score_str);
 #endif

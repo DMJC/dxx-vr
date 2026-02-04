@@ -49,14 +49,20 @@ static int HUD_color = -1;
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
 static inline int hud_message_y_offset(void)
 {
-	return (grd_curcanv->cv_bitmap.bm_h) / 20;
+	return (grd_curcanv->cv_bitmap.bm_h * 3) / 10;
+}
+static inline int hud_message_cockpit_offset_y(void)
+{
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
+		return grd_curcanv->cv_bitmap.bm_h / 10;
+	return 0;
 }
 
 static inline int vr_hud_top_margin_y(void)
 {
 #ifdef USE_OPENVR
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
-		return grd_curcanv->cv_bitmap.bm_h / 20;
+		return grd_curcanv->cv_bitmap.bm_h / 10;
 #endif
 	return 0;
 }
@@ -75,7 +81,8 @@ void HUD_clear_messages()
 void HUD_render_message_frame()
 {
 	int i,j,y;
-
+	int top_margin;
+	
 	HUD_toolong = 0;
 
 	if (( HUD_nmessages < 0 ) || (HUD_nmessages > HUD_MAX_NUM_STOR))
@@ -105,16 +112,32 @@ void HUD_render_message_frame()
 	if (HUD_nmessages > 0 )
 	{
 		int startmsg = ((HUD_nmessages-HUD_MAX_NUM_DISP<0)?0:HUD_nmessages-HUD_MAX_NUM_DISP);
+#ifdef USE_OPENVR
+		int center_x = grd_curcanv->cv_bitmap.bm_w / 2;
+		int offset_x = 0;
+		int offset_y = 0;
+#endif
 		if (HUD_color == -1)
 			HUD_color = BM_XRGB(0,28,0);
 
 		gr_set_curfont( GAME_FONT );
-
+#ifdef USE_OPENVR
+		cockpit_gauge_offset(&offset_x, &offset_y);
+		center_x += offset_x;
+#endif
+		top_margin = vr_hud_top_margin_y();
 		if (is_observer())
-			y = Observer_message_y_start;
+#ifdef USE_OPENVR
+			y = Observer_message_y_start + top_margin + hud_message_y_offset();
+#else
+			y = Observer_message_y_start;		
+#endif
 		else
+#ifdef USE_OPENVR
+			y = FSPACY(1) + top_margin + hud_message_y_offset();
+#else
 			y = FSPACY(1);
-
+#endif
 		if (Guided_missile[Player_num] && Guided_missile[Player_num]->type==OBJ_WEAPON && Guided_missile[Player_num]->id==GUIDEDMISS_ID &&
 		Guided_missile[Player_num]->signature==Guided_missile_sig[Player_num] && PlayerCfg.GuidedInBigWindow)
 			y+=LINE_SPACING;
@@ -124,7 +147,17 @@ void HUD_render_message_frame()
 
 			if (i == startmsg && strlen(HUD_messages[i].message) > 38)
 				HUD_toolong = 1;
-			gr_string(0x8000,y, &HUD_messages[i].message[0] );
+#ifdef USE_OPENVR
+			{
+				int string_width = 0;
+				int string_height = 0;
+				int avg_width = 0;
+				gr_get_string_size(HUD_messages[i].message, &string_width, &string_height, &avg_width);
+				gr_string(center_x - (string_width * 2) , y, &HUD_messages[i].message[0]);
+			}
+#else
+			gr_string(0x8000, y, &HUD_messages[i].message[0] );
+#endif
 			y += LINE_SPACING;
 		}
 	}
@@ -265,3 +298,4 @@ void player_dead_message(void)
 		gr_string(0x8000, GHEIGHT-LINE_SPACING, TXT_PRESS_ANY_KEY);
 	}
 }
+
