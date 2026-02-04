@@ -760,7 +760,7 @@ static inline int vr_hud_top_margin_y(void)
 void hud_show_score()
 {
 	char	score_str[20];
-	int	w, h, aw;
+	int	x, w, h, aw;
 	int top_margin;
 	int pnum = get_pnum_for_hud();
 
@@ -786,14 +786,15 @@ void hud_show_score()
     int offset_y = 0;
     int cockpit_offset_x = 0;
     int cockpit_offset_y = 0;
-
+	x = HUD_SCALE_X(8);
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
-		cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 10;
-		cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 10;
+		cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 2.25;
+		cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;
 	}
     
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) - offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
+	
+   	gr_string(offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);	
 #else
 	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
 #endif
@@ -869,11 +870,11 @@ void hud_show_score_added()
         int cockpit_offset_x = 0;
         int cockpit_offset_y = 0;
     	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
-		    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 10;
-	    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 10;
+		    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 2.125;
+	    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;
     	}
 	    cockpit_gauge_offset(&offset_x, &offset_y);
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1) + offset_x + cockpit_offset_x, LINE_SPACING+FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
+    	gr_string(offset_x + cockpit_offset_x, LINE_SPACING+FSPACY(1) + offset_y + top_margin + cockpit_offset_y, score_str);
 #else	
 		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1) + top_margin, score_str);
 #endif
@@ -1753,7 +1754,6 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
-//		gr_printf(x + offset_x, FSPACY(1) + offset_y + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 		gr_printf(x + offset_x + cockpit_offset_x, FSPACY(1) + offset_y + top_margin + cockpit_offset_y, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 #else
 		gr_printf(x, FSPACY(1) + top_margin, "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);

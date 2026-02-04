@@ -113,7 +113,7 @@ void HUD_render_message_frame()
 	{
 		int startmsg = ((HUD_nmessages-HUD_MAX_NUM_DISP<0)?0:HUD_nmessages-HUD_MAX_NUM_DISP);
 #ifdef USE_OPENVR
-		int center_x = grd_curcanv->cv_bitmap.bm_w / 2;
+		int hud_offset_x = grd_curcanv->cv_bitmap.bm_w / 4;
 		int offset_x = 0;
 		int offset_y = 0;
 #endif
@@ -123,7 +123,6 @@ void HUD_render_message_frame()
 		gr_set_curfont( GAME_FONT );
 #ifdef USE_OPENVR
 		cockpit_gauge_offset(&offset_x, &offset_y);
-		center_x += offset_x;
 #endif
 		top_margin = vr_hud_top_margin_y();
 		if (is_observer())
@@ -153,7 +152,8 @@ void HUD_render_message_frame()
 				int string_height = 0;
 				int avg_width = 0;
 				gr_get_string_size(HUD_messages[i].message, &string_width, &string_height, &avg_width);
-				gr_string(center_x - (string_width * 2) , y, &HUD_messages[i].message[0]);
+				gr_string(offset_x + hud_offset_x, y, &HUD_messages[i].message[0]);    	        			
+//				gr_string(center_x - (string_width * 2) , y, &HUD_messages[i].message[0]);
 			}
 #else
 			gr_string(0x8000, y, &HUD_messages[i].message[0] );
