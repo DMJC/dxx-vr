@@ -19,7 +19,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 
 #include "dxxerror.h"
@@ -70,10 +69,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "args.h"
 
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
-
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -116,7 +111,6 @@ typedef struct automap
 	int			*drawingListBright;
 	
 	// Screen canvas variables
-	grs_canvas		*render_canvas;
 	grs_canvas		automap_view;
 	
 	grs_bitmap		automap_background;
@@ -204,38 +198,6 @@ int HighlightMarker=-1;
 char MarkerMessage[NUM_MARKERS][MARKER_MESSAGE_LEN];
 float MarkerScale=2.0;
 int	MarkerObject[NUM_MARKERS];
-
-#ifdef USE_OPENVR
-static void automap_vr_offset(int *x, int *y)
-{
-	int offset_x = 0;
-	int offset_y = 0;
-
-	if (vr_openvr_active())
-	{
-		const int eye = vr_openvr_current_eye();
-		float l = 0.0f;
-		float r = 0.0f;
-		float b = 0.0f;
-		float t = 0.0f;
-
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-		{
-			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
-			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
-			const float x_ndc = (r + l) / (r - l);
-			const float y_ndc = (t + b) / (t - b);
-			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curcanv->cv_bitmap.bm_w / 2);
-			offset_y = center_y - (grd_curcanv->cv_bitmap.bm_h / 2);
-		}
-	}
-
-	*x = offset_x;
-	*y = offset_y;
-}
-#endif
 
 extern vms_vector Matrix_scale; //how the matrix is currently scaled
 
@@ -567,8 +529,7 @@ void draw_automap(automap *am)
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
 
-	//gr_set_current_canvas(NULL);
-	gr_set_current_canvas(am->render_canvas);
+	gr_set_current_canvas(NULL);
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
@@ -666,61 +627,6 @@ void draw_automap(automap *am)
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
-
-	gr_set_current_canvas(NULL);
-#ifdef OGL
-	{
-		int offset_x = 0;
-		int offset_y = 0;
-		int scaled_w = (SWIDTH * 7) / 10;
-		int scaled_h = (SHEIGHT * 7) / 10;
-		int scaled_x = (SWIDTH - scaled_w) / 2;
-		int scaled_y = (SHEIGHT - scaled_h) / 2;
-		GLboolean depth_enabled = GL_FALSE;
-#ifdef USE_OPENVR
-		automap_vr_offset(&offset_x, &offset_y);
-#endif
-		scaled_w = (scaled_w * 7) / 10;
-		scaled_h = (scaled_h * 7) / 10;
-		scaled_x = (SWIDTH - scaled_w) / 2;
-		scaled_y = (SHEIGHT - scaled_h) / 2;
-		scaled_x += offset_x;
-		scaled_y += offset_y;
-		depth_enabled = glIsEnabled(GL_DEPTH_TEST);
-		if (depth_enabled)
-			glDisable(GL_DEPTH_TEST);
-		ogl_bindbmtex(&am->render_canvas->cv_bitmap);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		ogl_ubitmapm_cs(scaled_x, scaled_y, scaled_w, scaled_h, &am->render_canvas->cv_bitmap, -1, F1_0);
-		if (depth_enabled)
-			glEnable(GL_DEPTH_TEST);
-	}
-#else
-	{
-		int offset_x = 0;
-		int offset_y = 0;
-		int scaled_w = (SWIDTH * 7) / 10;
-		int scaled_h = (SHEIGHT * 7) / 10;
-		int scaled_x = (SWIDTH - scaled_w) / 2;
-		int scaled_y = (SHEIGHT - scaled_h) / 2;
-#ifdef USE_OPENVR
-		automap_vr_offset(&offset_x, &offset_y);
-#endif
-		scaled_w = (scaled_w * 7) / 10;
-		scaled_h = (scaled_h * 7) / 10;
-		scaled_x = (SWIDTH - scaled_w) / 2;
-		scaled_y = (SHEIGHT - scaled_h) / 2;
-		scaled_x += offset_x;
-		scaled_y += offset_y;
-		grs_point vertbuf[3] = {
-			{ i2f(scaled_x), i2f(scaled_y) },
-			{ 0, 0 },
-			{ i2f(scaled_x + scaled_w), i2f(scaled_y + scaled_h) }
-		};
-		scale_bitmap(&am->render_canvas->cv_bitmap, vertbuf, 0);
-	}
-#endif
 
 	am->t2 = timer_query();
 	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
@@ -915,7 +821,6 @@ int automap_handler(window *wind, d_event *event, automap *am)
 #ifdef OGL
 			gr_free_bitmap_data(&am->automap_background);
 #endif
-			gr_free_canvas(am->render_canvas);
 			d_free(am->edges);
 			d_free(am->drawingListBright);
 			d_free(am);
@@ -959,14 +864,10 @@ void do_automap()
 	am->num_edges = 0;
 	am->highest_edge_index = -1;
 	am->max_edges = Num_segments*12;
-	am->render_canvas = gr_create_canvas(SWIDTH, SHEIGHT);
 	MALLOC(am->edges, Edge_info, am->max_edges);
 	MALLOC(am->drawingListBright, int, am->max_edges);
-//	if (!am->edges || !am->drawingListBright)
-	if (!am->render_canvas || !am->edges || !am->drawingListBright)
-{
-		if (am->render_canvas)
-			gr_free_canvas(am->render_canvas);
+	if (!am->edges || !am->drawingListBright)
+	{
 		if (am->edges)
 			d_free(am->edges);
 		if (am->drawingListBright)
@@ -977,7 +878,7 @@ void do_automap()
 	}
 	
 	am->zoom = 0x9000;
-	am->farthest_dist = (F1_0 * 20 * 40); // 50 segments away
+	am->farthest_dist = (F1_0 * 20 * 50); // 50 segments away
 	am->viewDist = 0;
 
 	init_automap_colors(am);
@@ -1027,16 +928,8 @@ void do_automap()
 	if (pcx_error != PCX_ERROR_NONE)
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
-//	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-#ifdef USE_OPENVR
-    int offset_x = 0;
-    int offset_y = 0;
-	automap_vr_offset(&offset_x, &offset_y);
-	gr_init_sub_canvas(&am->automap_view, am->render_canvas, (SWIDTH/23)*.7 + offset_x, (SHEIGHT/6)*.7 + offset_y, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
-//	gr_init_sub_canvas(&am->automap_view + offset_x, am->render_canvas + offset_y, (SWIDTH/23)*.7, (SHEIGHT/6)*.7, (SWIDTH/1.1)*.7, (SHEIGHT/1.45)*.7);
-#else
-	gr_init_sub_canvas(&am->automap_view, am->render_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-#endif
+	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
+
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }
