@@ -413,7 +413,7 @@ static int automap_green_text_y(automap *am, int y)
 	if (!grd_curcanv)
 		return y;
 
-	return (grd_curcanv->cv_bitmap.bm_h - 1) - y;
+	return (SHEIGHT - 1) - y;
 }
 
 //name for each group.  maybe move somewhere else
