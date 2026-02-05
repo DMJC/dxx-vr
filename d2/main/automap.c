@@ -418,6 +418,9 @@ void name_frame(automap *am)
 {
 	char	name_level_left[128],name_level_right[128];
 	int wr,h,aw;
+	const int title_y = (SHEIGHT/48);
+	grs_canvas flipped_canvas;
+	grs_canvas *saved_canvas = grd_curcanv;
 
 	if (Current_level_num > 0)
 		sprintf(name_level_left, "%s %i",TXT_LEVEL, Current_level_num);
@@ -431,11 +434,22 @@ void name_frame(automap *am)
 
 	strcat(name_level_right, Current_level_name);
 
+	if (am->rendering_to_vr_texture)
+	{
+		flipped_canvas = *grd_curcanv;
+		flipped_canvas.cv_bitmap.bm_data = grd_curcanv->cv_bitmap.bm_data + (grd_curcanv->cv_bitmap.bm_h - 1) * grd_curcanv->cv_bitmap.bm_rowsize;
+		flipped_canvas.cv_bitmap.bm_rowsize = -grd_curcanv->cv_bitmap.bm_rowsize;
+		gr_set_current_canvas(&flipped_canvas);
+	}
+
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+	gr_printf((SWIDTH/64), title_y, "%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), title_y, "%s", name_level_right);
+
+	if (am->rendering_to_vr_texture)
+		gr_set_current_canvas(saved_canvas);
 }
 
 static void automap_apply_input(automap *am)
