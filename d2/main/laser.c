@@ -2232,8 +2232,12 @@ void do_missile_firing(int drop_bomb)
 		return;
 	}
 
+#ifdef USE_OPENVR
+	//fixes missile mountpoint desync from camera in VR.
+	vms_vector orient = vr_get_player_shot_orientation(ConsoleObject);
+#else
 	vms_vector orient = Objects[Players[Player_num].objnum].orient.fvec;
-
+#endif
 	if (!Player_is_dead && (Players[Player_num].secondary_ammo[weapon] > 0))	{
 
 		int weapon_index,weapon_gun;

@@ -142,6 +142,12 @@ typedef struct automap
 	int rendering_to_vr_texture;
 } automap;
 
+static void gr_flip_sub_canvas(grs_canvas *canvas)
+{
+	canvas->cv_bitmap.bm_data += (canvas->cv_bitmap.bm_h - 1) * canvas->cv_bitmap.bm_rowsize;
+	canvas->cv_bitmap.bm_rowsize = -canvas->cv_bitmap.bm_rowsize;
+}
+
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
 #define MAX_EDGES 6000  // Determined by loading all the levels by John & Mike, Feb 9, 1995
 
@@ -413,7 +419,7 @@ static int automap_green_text_y(automap *am, int y)
 	if (!grd_curcanv)
 		return y;
 
-    y = (grd_curcanv->cv_bitmap.bm_h - 1) - y;
+    return (grd_curcanv->cv_bitmap.bm_h + 1) - y;
 }
 
 //name for each group.  maybe move somewhere else
@@ -424,6 +430,36 @@ static const char *const system_name[] = {
 			"Limefrost Spiral",
 			"Baloris Prime",
 			"Omega System"};
+
+#ifdef OGL
+extern void get_char_width(ubyte c,ubyte c2,int *width,int *spacing);
+
+static void automap_draw_vflipped_text(int x, int y, const char *text)
+{
+	grs_font *const font = grd_curcanv->cv_font;
+	const int fg = grd_curcanv->cv_font_fg_color;
+
+	for (const unsigned char *ch = (const unsigned char *)text; *ch; ++ch)
+	{
+		int width, spacing;
+		int letter;
+
+		get_char_width(*ch, *(ch + 1), &width, &spacing);
+		letter = *ch - font->ft_minchar;
+		if (letter >= 0 && letter <= font->ft_maxchar - font->ft_minchar)
+		{
+			const int glyph_h = (int)(font->ft_h * FNTScaleY);
+			const int draw_y = grd_curcanv->cv_bitmap.bm_h - y - glyph_h;
+			if (font->ft_flags & FT_COLOR)
+				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], -1, F1_0);
+			else
+				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], fg, F1_0);
+		}
+
+		x += spacing;
+	}
+}
+#endif
 
 void name_frame(automap *am)
 {
@@ -446,10 +482,31 @@ void name_frame(automap *am)
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
 //    gr_printf((SWIDTH/64), title_y, "%s", name_level_left);
-	gr_printf((SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
+//	gr_printf((SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
+	if (am->rendering_to_vr_texture)
+	{
+#ifdef OGL
+		automap_draw_vflipped_text((SWIDTH/64), (SHEIGHT/48), name_level_left);
+#else
+		gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+#endif
+	}
+	else
+		gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
 //	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), title_y, "%s", name_level_right);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_right);	
+//	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_right);	
+	if (am->rendering_to_vr_texture)
+	{
+#ifdef OGL
+		automap_draw_vflipped_text(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), (SHEIGHT/48), name_level_right);
+#else
+		gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
+#endif
+	}
+	else
+		gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
 }
 
 static void automap_apply_input(automap *am)
@@ -562,6 +619,7 @@ static void draw_automap_to_canvas(automap *am)
 		const int map_w = (grd_curcanv->cv_bitmap.bm_w/1.1);
 		const int map_h = (grd_curcanv->cv_bitmap.bm_h/1.45);
 		gr_init_sub_canvas(&am->automap_view, grd_curcanv, map_x, map_y, map_w, map_h);
+		gr_flip_sub_canvas(&am->automap_view);		
 	}
 
 	gr_set_current_canvas(&am->automap_view);
@@ -576,7 +634,12 @@ static void draw_automap_to_canvas(automap *am)
 	if (!PlayerCfg.AutomapFreeFlight)
 		vm_vec_scale_add(&am->view_position,&am->view_target,&am->viewMatrix.fvec,-am->viewDist);
 
-	g3_set_view_matrix(&am->view_position,&am->viewMatrix,am->zoom);
+//	g3_set_view_matrix(&am->view_position,&am->viewMatrix,am->zoom);
+	{
+		vms_matrix map_view_matrix = am->viewMatrix;
+		vm_vec_negate(&map_view_matrix.uvec);
+		g3_set_view_matrix(&am->view_position, &map_view_matrix, am->zoom);
+	}
 
 	draw_all_edges(am);
 
@@ -643,14 +706,13 @@ static void draw_automap_to_canvas(automap *am)
 	glLineWidth(linedotscale);
 #endif
 	name_frame(am);
-
 	if (HighlightMarker>-1 && MarkerMessage[HighlightMarker][0]!=0)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
 		gr_printf((SWIDTH/64), am->rendering_to_vr_texture ? (SHEIGHT/1.083) : (SHEIGHT/18), "%s", msg);
 	}
-
+	gr_set_current_canvas(&am->automap_view);
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
 }
@@ -983,7 +1045,7 @@ void do_automap()
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
-
+	gr_flip_sub_canvas(&am->automap_view);
 	gr_palette_load( gr_palette );
 	Automap_active = 1;
 }
