@@ -68,6 +68,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -136,6 +139,7 @@ typedef struct automap
 	int			blue_48;
 	int			red_48;
 	control_info controls;
+	int rendering_to_vr_texture;
 } automap;
 
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
@@ -401,6 +405,17 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
+static int automap_text_y(automap *am, int y)
+{
+	if (!am->rendering_to_vr_texture)
+		return y;
+
+	if (!grd_curcanv)
+		return y;
+
+	return (grd_curcanv->cv_bitmap.bm_h - 1) - y;
+}
+
 //name for each group.  maybe move somewhere else
 static const char *const system_name[] = {
 			"Zeta Aquilae",
@@ -429,9 +444,9 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+	gr_printf((SWIDTH/64),automap_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_text_y(am, (SHEIGHT/48)),"%s", name_level_right);
 }
 
 static void automap_apply_input(automap *am)
@@ -519,26 +534,23 @@ static void automap_apply_input(automap *am)
 	}
 }
 
-void draw_automap(automap *am)
+static void draw_automap_to_canvas(automap *am)
 {
 	int i;
 	int color;
 	object * objp;
 	g3s_point sphere_point;
 
-	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
-		am->leave_mode = 1;
-
 	gr_set_current_canvas(NULL);
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
+	gr_string((SWIDTH/8), automap_text_y(am, (SHEIGHT/16)), TXT_AUTOMAP);
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-	gr_string((SWIDTH/10.666), (SHEIGHT/1.126), TXT_TURN_SHIP);
-	gr_printf((SWIDTH/10.666), (SHEIGHT/1.083), "F9/F10 Changes viewing distance");
-	gr_string((SWIDTH/10.666), (SHEIGHT/1.043), TXT_AUTOMAP_MARKER);
+	gr_string((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.126)), TXT_TURN_SHIP);
+	gr_printf((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.083)), "F9/F10 Changes viewing distance");
+	gr_string((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.043)), TXT_AUTOMAP_MARKER);
 
 	gr_set_current_canvas(&am->automap_view);
 
@@ -555,7 +567,6 @@ void draw_automap(automap *am)
 	draw_all_edges(am);
 
 	selected_player_rgb = player_rgb; 
-	// Draw player...
 #ifdef NETWORK
 	if(Netgame.BlackAndWhitePyros) 
 		selected_player_rgb = player_rgb_alt; 
@@ -563,14 +574,13 @@ void draw_automap(automap *am)
 		color = get_team(Player_num);
 	else
 #endif	
-		color = Player_num;	// Note link to above if!
+		color = Player_num;
 
 	gr_setcolor(BM_XRGB(selected_player_rgb[color].r,selected_player_rgb[color].g,selected_player_rgb[color].b));
 	draw_player(&Objects[Players[Player_num].objnum]);
 
 	DrawMarkers(am);
 	
-	// Draw player(s)...
 #ifdef NETWORK
 	if ( (Game_mode & (GM_TEAM | GM_MULTI_COOP)) || (Netgame.game_flags & NETGAME_FLAG_SHOW_MAP) )	{
 		for (i = (Netgame.host_is_obs ? 1 : 0); i < N_players; i++) {
@@ -600,7 +610,7 @@ void draw_automap(automap *am)
 			if ( Automap_visited[objp->segnum] )	{
 				if ( (objp->id==POW_KEY_RED) || (objp->id==POW_KEY_BLUE) || (objp->id==POW_KEY_GOLD) )	{
 					switch (objp->id) {
-					case POW_KEY_RED:		gr_setcolor(BM_XRGB(63, 5, 5));	break;
+					case POW_KEY_RED: 		gr_setcolor(BM_XRGB(63, 5, 5));	break;
 					case POW_KEY_BLUE:	gr_setcolor(BM_XRGB(5, 5, 63)); break;
 					case POW_KEY_GOLD:	gr_setcolor(BM_XRGB(63, 63, 10)); break;
 					default:
@@ -622,14 +632,42 @@ void draw_automap(automap *am)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
-		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
+		gr_printf((SWIDTH/64),automap_text_y(am, (SHEIGHT/18)),"%s", msg);
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
+}
+
+void draw_automap(automap *am)
+{
+	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
+		am->leave_mode = 1;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		if (eye == 0)
+		{
+			vr_openvr_bind_menu_target();
+			am->rendering_to_vr_texture = 1;
+			draw_automap_to_canvas(am);
+			am->rendering_to_vr_texture = 0;
+			vr_openvr_unbind_menu_target();
+		}
+		if (eye >= 0)
+			vr_openvr_draw_menu_quad_for_eye(eye, 0, 0.65f, 1, 1);
+	}
+	else
+#endif
+	{
+		am->rendering_to_vr_texture = 0;
+		draw_automap_to_canvas(am);
+	}
 
 	am->t2 = timer_query();
-	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
+	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS))
 	{
 		if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
 			timer_delay(f1_0 / GameArg.SysMaxFPS - (am->t2 - am->t1));
