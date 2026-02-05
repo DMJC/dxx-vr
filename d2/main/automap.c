@@ -405,17 +405,6 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
-static int automap_text_y(automap *am, int y)
-{
-	if (!am->rendering_to_vr_texture)
-		return y;
-
-	if (!grd_curcanv)
-		return y;
-
-	return (grd_curcanv->cv_bitmap.bm_h - 1) - y;
-}
-
 //name for each group.  maybe move somewhere else
 static const char *const system_name[] = {
 			"Zeta Aquilae",
@@ -444,9 +433,9 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	gr_printf((SWIDTH/64),automap_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
+	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_text_y(am, (SHEIGHT/48)),"%s", name_level_right);
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
 }
 
 static void automap_apply_input(automap *am)
@@ -545,12 +534,12 @@ static void draw_automap_to_canvas(automap *am)
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-	gr_string((SWIDTH/8), automap_text_y(am, (SHEIGHT/16)), TXT_AUTOMAP);
+	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
-	gr_string((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.126)), TXT_TURN_SHIP);
-	gr_printf((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.083)), "F9/F10 Changes viewing distance");
-	gr_string((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.043)), TXT_AUTOMAP_MARKER);
+	gr_string((SWIDTH/10.666), (SHEIGHT/1.126), TXT_TURN_SHIP);
+	gr_printf((SWIDTH/10.666), (SHEIGHT/1.083), "F9/F10 Changes viewing distance");
+	gr_string((SWIDTH/10.666), (SHEIGHT/1.043), TXT_AUTOMAP_MARKER);
 
 	{
 		const int map_x = (grd_curcanv->cv_bitmap.bm_w/23);
@@ -640,7 +629,7 @@ static void draw_automap_to_canvas(automap *am)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
-		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
+		gr_printf((SWIDTH/64), am->rendering_to_vr_texture ? (SHEIGHT/1.083) : (SHEIGHT/18), "%s", msg);
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
@@ -665,7 +654,7 @@ void draw_automap(automap *am)
 			vr_openvr_unbind_menu_target();
 		}
 		if (eye >= 0)
-			vr_openvr_draw_menu_quad_for_eye(eye, 0, 0.65f, 1, 1);
+			vr_openvr_draw_menu_quad_for_eye(eye, 0, 0.65f, 1, 0);
 	}
 	else
 #endif
