@@ -405,6 +405,17 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
+static int automap_green_text_y(automap *am, int y)
+{
+	if (!am->rendering_to_vr_texture)
+		return y;
+
+	if (!grd_curcanv)
+		return y;
+
+    y = (grd_curcanv->cv_bitmap.bm_h - 1) - y;
+}
+
 //name for each group.  maybe move somewhere else
 static const char *const system_name[] = {
 			"Zeta Aquilae",
@@ -419,8 +430,6 @@ void name_frame(automap *am)
 	char	name_level_left[128],name_level_right[128];
 	int wr,h,aw;
 	const int title_y = (SHEIGHT/48);
-	grs_canvas flipped_canvas;
-	grs_canvas *saved_canvas = grd_curcanv;
 
 	if (Current_level_num > 0)
 		sprintf(name_level_left, "%s %i",TXT_LEVEL, Current_level_num);
@@ -434,22 +443,13 @@ void name_frame(automap *am)
 
 	strcat(name_level_right, Current_level_name);
 
-	if (am->rendering_to_vr_texture)
-	{
-		flipped_canvas = *grd_curcanv;
-		flipped_canvas.cv_bitmap.bm_data = grd_curcanv->cv_bitmap.bm_data + (grd_curcanv->cv_bitmap.bm_h - 1) * grd_curcanv->cv_bitmap.bm_rowsize;
-		flipped_canvas.cv_bitmap.bm_rowsize = -grd_curcanv->cv_bitmap.bm_rowsize;
-		gr_set_current_canvas(&flipped_canvas);
-	}
-
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	gr_printf((SWIDTH/64), title_y, "%s", name_level_left);
+//    gr_printf((SWIDTH/64), title_y, "%s", name_level_left);
+	gr_printf((SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), title_y, "%s", name_level_right);
-
-	if (am->rendering_to_vr_texture)
-		gr_set_current_canvas(saved_canvas);
+//	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), title_y, "%s", name_level_right);
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_right);	
 }
 
 static void automap_apply_input(automap *am)
@@ -541,6 +541,7 @@ static void draw_automap_to_canvas(automap *am)
 {
 	int i;
 	int color;
+    int linedotscale = 3; 
 	object * objp;
 	g3s_point sphere_point;
 
@@ -569,7 +570,9 @@ static void draw_automap_to_canvas(automap *am)
 
 	g3_start_frame();
 	render_start_frame();
-
+#ifdef USE_OPENVR
+	glLineWidth(linedotscale + 1);
+#endif
 	if (!PlayerCfg.AutomapFreeFlight)
 		vm_vec_scale_add(&am->view_position,&am->view_target,&am->viewMatrix.fvec,-am->viewDist);
 
@@ -621,7 +624,7 @@ static void draw_automap_to_canvas(automap *am)
 			if ( Automap_visited[objp->segnum] )	{
 				if ( (objp->id==POW_KEY_RED) || (objp->id==POW_KEY_BLUE) || (objp->id==POW_KEY_GOLD) )	{
 					switch (objp->id) {
-					case POW_KEY_RED: 		gr_setcolor(BM_XRGB(63, 5, 5));	break;
+					case POW_KEY_RED:	gr_setcolor(BM_XRGB(63, 5, 5));	break;
 					case POW_KEY_BLUE:	gr_setcolor(BM_XRGB(5, 5, 63)); break;
 					case POW_KEY_GOLD:	gr_setcolor(BM_XRGB(63, 63, 10)); break;
 					default:
@@ -636,7 +639,9 @@ static void draw_automap_to_canvas(automap *am)
 	}
 
 	g3_end_frame();
-
+#ifdef USE_OPENVR
+	glLineWidth(linedotscale);
+#endif
 	name_frame(am);
 
 	if (HighlightMarker>-1 && MarkerMessage[HighlightMarker][0]!=0)
