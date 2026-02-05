@@ -405,6 +405,17 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
+static int automap_green_text_y(automap *am, int y)
+{
+	if (!am->rendering_to_vr_texture)
+		return y;
+
+	if (!grd_curcanv)
+		return y;
+
+	return (grd_curcanv->cv_bitmap.bm_h - 1) - y;
+}
+
 //name for each group.  maybe move somewhere else
 static const char *const system_name[] = {
 			"Zeta Aquilae",
@@ -433,9 +444,9 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
+	gr_printf((SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),automap_green_text_y(am, (SHEIGHT/48)),"%s", name_level_right);
 }
 
 static void automap_apply_input(automap *am)
@@ -654,7 +665,7 @@ void draw_automap(automap *am)
 			vr_openvr_unbind_menu_target();
 		}
 		if (eye >= 0)
-			vr_openvr_draw_menu_quad_for_eye(eye, 0, 0.65f, 1, 0);
+			vr_openvr_draw_menu_quad_for_eye(eye, 0, 0.65f, 1, 1);
 	}
 	else
 #endif
