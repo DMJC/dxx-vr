@@ -5,11 +5,21 @@ Descent 1&2 source port based on [DXX-Retro](https://github.com/CDarrow/DXX-Retr
 
 This has been built/tested against Debian Linux 14 but should work on other platforms.
 
+This has been tested with a PSVR2 Headset on the Monado Drivers.
+
 Status
 -------------------------
 VR Cutscene support - Complete
-VR Gameplay - WIP graphical issues with HUD/Render order.
-VR Menu Support - WIP/Not Working.
+VR Gameplay - Complete
+VR Menu Support - Complete
+Multiplayer VR Messages - Not Tested
+
+Use
+-------------------------
+To launch with VR Support run: ./d2x-redux -vr
+
+It is highly recommended you calibrate your SteamVR headset by placing it on the ground and calibrating the play area with a floor distance of zero.
+
 
 Building in Visual Studio
 -------------------------
