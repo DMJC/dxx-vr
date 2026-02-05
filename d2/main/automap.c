@@ -552,6 +552,14 @@ static void draw_automap_to_canvas(automap *am)
 	gr_printf((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.083)), "F9/F10 Changes viewing distance");
 	gr_string((SWIDTH/10.666), automap_text_y(am, (SHEIGHT/1.043)), TXT_AUTOMAP_MARKER);
 
+	{
+		const int map_x = (grd_curcanv->cv_bitmap.bm_w/23);
+		const int map_y = (grd_curcanv->cv_bitmap.bm_h/6);
+		const int map_w = (grd_curcanv->cv_bitmap.bm_w/1.1);
+		const int map_h = (grd_curcanv->cv_bitmap.bm_h/1.45);
+		gr_init_sub_canvas(&am->automap_view, grd_curcanv, map_x, map_y, map_w, map_h);
+	}
+
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -632,7 +640,7 @@ static void draw_automap_to_canvas(automap *am)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
-		gr_printf((SWIDTH/64),automap_text_y(am, (SHEIGHT/18)),"%s", msg);
+		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
