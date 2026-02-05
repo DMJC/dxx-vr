@@ -30,6 +30,7 @@ void vr_openvr_bind_menu_target(void);
 void vr_openvr_unbind_menu_target(void);
 void vr_openvr_submit_menu(int curved);
 void vr_openvr_submit_mono_from_texture(unsigned int texture, float u, float v, int curved);
+void vr_openvr_draw_menu_quad_for_eye(int eye, int curved, float scale, int mono_mode, int flip_v);
 
 #ifdef __cplusplus
 }
