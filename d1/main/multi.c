@@ -2202,6 +2202,9 @@ multi_do_position(const ubyte *buf)
 
 	pnum = buf[1];
 
+	if (pnum >= N_players)
+		return;
+
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[Players[pnum].objnum], (shortpos *)(buf + 2),0);
 #else

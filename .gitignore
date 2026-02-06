@@ -60,3 +60,7 @@ Thumbs.db
 *.app
 d*x-rebirth
 /*/out/install
+
+# Build directories
+build_d1/
+build_d2/
