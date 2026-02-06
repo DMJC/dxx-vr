@@ -411,7 +411,7 @@ void gr_palette_load( ubyte *pal )
 		return; // Display is not palettised
 
 	for (i=0;i<64;i++)
-		gamma[i] = (int)((pow(((double)(14)/(double)(32)), 1.0)*i) + 0.5);
+		gamma[i] = (int)((((double)(14)/(double)(32))*i) + 0.5);
 
 	for (i = 0, j = 0; j < 256; j++)
 	{
