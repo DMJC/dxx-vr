@@ -1185,9 +1185,11 @@ int obj_create(enum object_type_t type, ubyte id,int segnum,vms_vector *pos,
 	int objnum;
 	object *obj;
 
-	// Some consistency checking. FIXME: Add more debug output here to probably trace all possible occurances back.
-	if (segnum < 0 || segnum > Highest_segment_index)
+	// Some consistency checking.
+	if (segnum < 0 || segnum > Highest_segment_index) {
+		con_printf(CON_DEBUG, "obj_create: Invalid segment number %d (Highest_segment_index=%d) for object type %d, id %d\n", segnum, Highest_segment_index, type, id);
 		return -1;
+	}
 
 	Assert(ctype <= CT_CNTRLCEN);
 
