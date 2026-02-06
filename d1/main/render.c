@@ -1368,6 +1368,8 @@ fix Zoom_factor=F1_0;
 void render_frame(fix eye_offset)
 {
 	int start_seg_num;
+	vms_vector viewer_pos_save = Viewer->pos;
+	int restore_viewer_pos = 0;
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
@@ -1404,27 +1406,15 @@ void render_frame(fix eye_offset)
 	if (start_seg_num==-1)
 		start_seg_num = Viewer->segnum;
 
+	vms_matrix base_orient = Viewer->orient;
 	if (Rear_view && (Viewer==ConsoleObject)) {
 		vms_matrix headm,viewm;
 		Player_head_angles.p = Player_head_angles.b = 0;
 		Player_head_angles.h = 0x7fff;
 		vm_angles_2_matrix(&headm,&Player_head_angles);
 		vm_matrix_x_matrix(&viewm,&Viewer->orient,&headm);
-		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
+		base_orient = viewm;
 	} else	{
-#ifdef USE_OPENVR
-		vms_matrix vr_view_orient = Viewer->orient;
-		vms_vector vr_head_pos;
-		vms_matrix vr_head_orient;
-		if (vr_openvr_active() && vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
-		{
-			vms_matrix composed;
-			vm_matrix_x_matrix(&composed, &Viewer->orient, &vr_head_orient);
-			vr_view_orient = composed;
-			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject)
-				Viewer->orient = composed;
-		}
-#endif
 #ifdef JOHN_ZOOM
 		if (keyd_pressed[KEY_RSHIFT] )	{
 			Zoom_factor += FrameTime*4;
@@ -1433,23 +1423,45 @@ void render_frame(fix eye_offset)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
-#endif
-			fixdiv(Render_zoom,Zoom_factor));
-#else
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
-#else
-			&Viewer->orient,
-#endif
-			Render_zoom);
 #endif
 	}
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		vms_vector vr_head_pos;
+		vms_matrix vr_head_orient;
+		if (vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
+		{
+			vms_matrix composed;
+			vms_matrix ship_orient = base_orient;
+			vm_matrix_x_matrix(&composed, &base_orient, &vr_head_orient);
+			base_orient = composed;
+			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject && !Rear_view)
+			{
+				Viewer->orient = composed;
+				ship_orient = composed;
+			}
+			{
+				vms_vector head_world;
+				vm_vec_rotate(&head_world, &vr_head_pos, &ship_orient);
+				vm_vec_add2(&Viewer_eye, &head_world);
+				if (Viewer == ConsoleObject)
+				{
+					vm_vec_add2(&Viewer->pos, &head_world);
+					restore_viewer_pos = 1;
+				}
+			}
+		}
+	}
+#endif
+
+#ifdef JOHN_ZOOM
+	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom,Zoom_factor));
+#else
+	g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
+#endif
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
@@ -1458,6 +1470,9 @@ void render_frame(fix eye_offset)
 	}
 
 	render_mine(start_seg_num,eye_offset);
+
+	if (restore_viewer_pos)
+		Viewer->pos = viewer_pos_save;
 
 	g3_end_frame();
 }
