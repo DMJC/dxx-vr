@@ -70,7 +70,7 @@ add_executable (d2x-redux
     vr_openvr.cpp
     )
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_definitions(d2x-redux PUBLIC
     DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}

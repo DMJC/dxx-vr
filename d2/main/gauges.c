@@ -892,10 +892,9 @@ void sb_show_score()
 
 	int pnum = get_pnum_for_hud();
 
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -1034,10 +1033,9 @@ void play_homing_warning(void)
 void show_homing_warning(void)
 {
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (Endlevel_sequence)
@@ -1101,10 +1099,9 @@ void hud_show_homing_warning(void)
 void hud_show_keys(void)
 {
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	grs_bitmap *blue,*yellow,*red;
@@ -1143,10 +1140,9 @@ extern grs_bitmap Orb_icons[2];
 
 void hud_show_orbs (void)
 {
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (Game_mode & GM_HOARD) {
@@ -1221,11 +1217,10 @@ void hud_show_energy(void)
 	if (PlayerCfg.HudMode<2) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
 		if (Game_mode & GM_MULTI)
@@ -1251,10 +1246,9 @@ void hud_show_afterburner(void)
 	int y;
 	int pnum = get_pnum_for_hud();
 
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -1296,10 +1290,9 @@ void show_bomb_count(int x,int y,int bg_color,int always_show,int right_align)
 {
 	int bomb,count,w=0,h=0,aw=0;
 	char txt[5],*t;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int pnum = get_pnum_for_hud();
@@ -1341,10 +1334,9 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 	char weapon_str[10];
 
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	orig_x = x;
@@ -1523,10 +1515,9 @@ void hud_show_weapons(void)
 	const char	*weapon_name;
 	char	weapon_str[32];
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_curfont( GAME_FONT );
@@ -1630,10 +1621,9 @@ void hud_show_weapons(void)
 void hud_show_cloak_invuln(void)
 {
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
@@ -1680,10 +1670,9 @@ void hud_show_cloak_invuln(void)
 void hud_show_shield(void)
 {
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (PlayerCfg.HudMode<2) {
@@ -1728,12 +1717,11 @@ void hud_show_lives()
 {
 	int x;
 	int top_margin;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
 	int cockpit_offset_x = 0;
 	int cockpit_offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int pnum = get_pnum_for_hud();
@@ -1780,10 +1768,9 @@ void hud_show_lives()
 void sb_show_lives()
 {
 	int x,y;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int pnum = get_pnum_for_hud();
@@ -1862,10 +1849,9 @@ void show_time()
 {
 	int secs = f2i(Players[Player_num].time_level) % 60;
 	int mins = f2i(Players[Player_num].time_level) / 60;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_curfont( GAME_FONT );
@@ -1954,10 +1940,9 @@ void cockpit_decode_alpha(grs_bitmap *bm)
 	static unsigned char *cur=NULL;
 	static short cur_w=0, cur_h=0;
 	static unsigned char cockpitbuf[1024*1024];
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -2036,10 +2021,9 @@ void draw_wbu_overlay()
 
 	cockpit_decode_alpha(bm);
 
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (WinBoxOverlay[0] != NULL){
@@ -2083,10 +2067,9 @@ void draw_energy_bar(int energy)
 	int x1, x2, y;
 	int not_energy = (HIRESMODE?(HUD_SCALE_X(125 - (energy*125)/100)):(HUD_SCALE_X(63 - (energy*63)/100)));
 	double aplitscale=((double)(HUD_SCALE_X(65)/HUD_SCALE_Y(8))/(65/8)); //scale aplitude of energy bar to current resolution aspect
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	// Draw left energy bar
@@ -2145,10 +2128,9 @@ void draw_afterburner_bar(int afterburner)
 	ubyte afterburner_bar_table[AFTERBURNER_GAUGE_H_L*2] = { 3,11, 3,11, 3,11, 3,11, 3,11, 3,11, 2,11, 2,10, 2,10, 2,10, 2,10, 2,10, 2,10, 1,10, 1,10, 1,10, 1,9, 1,9, 1,9, 1,9, 0,9, 0,9, 0,8, 0,8, 0,8, 0,8, 1,8, 2,8, 3,8, 4,8, 5,8, 6,7 };
 	ubyte afterburner_bar_table_hires[AFTERBURNER_GAUGE_H_H*2] = { 5,20, 5,20, 5,19, 5,19, 5,19, 5,19, 4,19, 4,19, 4,19, 4,19, 4,19, 4,18, 4,18, 4,18, 4,18, 3,18, 3,18, 3,18, 3,18, 3,18, 3,18, 3,17, 3,17, 2,17, 2,17, 2,17, 2,17, 2,17, 2,17, 2,17, 2,17, 2,16, 2,16, 1,16, 1,16, 1,16, 1,16, 1,16, 1,16, 1,16, 1,16, 1,15, 1,15, 1,15, 0,15, 0,15, 0,15, 0,15, 0,15, 0,15, 0,14, 0,14, 0,14, 1,14, 2,14, 3,14, 4,14, 5,14, 6,13, 7,13, 8,13, 9,13, 10,13, 11,13, 12,13 };
 	ubyte *pabt = (HIRESMODE ? afterburner_bar_table_hires : afterburner_bar_table);
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	// Draw afterburner bar
@@ -2184,10 +2166,9 @@ void draw_afterburner_bar(int afterburner)
 void draw_shield_bar(int shield)
 {
 	int bm_num = shield>=100?9:(shield / 10);
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	PAGE_IN_GAUGE( GAUGE_SHIELDS+9-bm_num	);
@@ -2208,11 +2189,10 @@ void draw_player_ship(int cloak_state,int x, int y)
 	int pnum = get_pnum_for_hud();
 
 	grs_bitmap *bm = NULL;
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int color;
 #ifdef NETWORK
@@ -2293,10 +2273,10 @@ void draw_player_ship(int cloak_state,int x, int y)
 void draw_numerical_display(int shield, int energy)
 {
 	int sw,sh,saw,ew,eh,eaw;
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_curfont( GAME_FONT );
 #ifndef OGL
@@ -2334,11 +2314,10 @@ void draw_numerical_display(int shield, int energy)
 
 void draw_keys()
 {
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_current_canvas( NULL );
 
@@ -2399,10 +2378,9 @@ void draw_weapon_info_sub(int info_index,gauge_box *box,int pic_x,int pic_y,char
 	grs_bitmap *bm;
 
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -2516,11 +2494,10 @@ void draw_ammo_info(int x,int y,int ammo_count,int primary)
 {
 	if (!PlayerCfg.HudMode)
 	{
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 		gr_setcolor(BM_XRGB(0,0,0));
 		gr_set_fontcolor(BM_XRGB(20,0,0),-1 );
@@ -2544,11 +2521,10 @@ void draw_weapon_box(int weapon_type,int weapon_num)
 {
 	int laser_level_changed;
 	int pnum = get_pnum_for_hud();
+int offset_x = 0;
+	int offset_y = 0;
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-
-        cockpit_gauge_offset(&offset_x, &offset_y);
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_current_canvas(NULL);
 
@@ -2630,10 +2606,9 @@ void draw_static(int win)
 #ifndef OGL
 	int x,y;
 #endif
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	static_time[win] += FrameTime;
@@ -2718,10 +2693,9 @@ void sb_draw_energy_bar(int energy)
 	int energy_x;
 
 	PAGE_IN_GAUGE( SB_GAUGE_ENERGY );
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 #ifdef USE_OPENVR
@@ -2796,10 +2770,9 @@ void sb_draw_shield_num(int shield)
 	int sw, sh, saw;
 	int bm_num = shield >= 100 ? 9 : (shield / 10);
 	int shield_x;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_curfont( GAME_FONT );
@@ -2818,10 +2791,9 @@ void sb_draw_shield_num(int shield)
 void sb_draw_shield_bar(int shield)
 {
 	int bm_num = shield>=100?9:(shield / 10);
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_current_canvas(NULL);
@@ -2836,10 +2808,9 @@ void sb_draw_shield_bar(int shield)
 void sb_draw_keys()
 {
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	grs_bitmap * bm;
@@ -2875,10 +2846,9 @@ void draw_invulnerable_ship()
 	static fix time=0;
 
 	int pnum = get_pnum_for_hud();
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	gr_set_current_canvas(NULL);
@@ -3178,10 +3148,9 @@ void hud_show_kill_list()
 {
 	int n_left,i,x0,x1,y,save_y;
 
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -3529,10 +3498,9 @@ void observer_show_time() {
 #define OBS_TIME_WIDTH ((int)FSPACX(80))
 
 int observer_draw_player_card(int pnum, int color, int x, int y) {
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 #ifdef OGL
@@ -4378,10 +4346,9 @@ void observer_maybe_show_kill_graph() {
 }
 
 int maybe_show_observers(int startY) {
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) {
@@ -5538,10 +5505,9 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 	gauge_box *box;
 	int rear_view_save = Rear_view;
 	int w,h,dx;
-#ifdef USE_OPENVR
-	int offset_x = 0;
+int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	box = NULL;
@@ -5604,7 +5570,7 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 #ifdef USE_OPENVR
 		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left) + offset_x,HUD_SCALE_Y(box->top)+offset_y,HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
 #else
-		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left,HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
+		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
 #endif
 	}
 
