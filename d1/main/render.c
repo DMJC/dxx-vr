@@ -98,7 +98,11 @@ vms_vector Viewer_eye;  //valid during render
 
 int	N_render_segs;
 
+#ifdef USE_OPENVR
+fix Render_zoom = 0xB341;					//the player's zoom factor
+#else
 fix Render_zoom = 0x9000;					//the player's zoom factor
+#endif
 
 #ifndef NDEBUG
 ubyte object_rendered[MAX_OBJECTS];
