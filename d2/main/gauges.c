@@ -58,9 +58,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
@@ -763,6 +760,12 @@ void hud_show_score()
 	int	x, w, h, aw;
 	int top_margin;
 	int pnum = get_pnum_for_hud();
+#ifdef USE_OPENVR
+    int offset_x = 0;
+    int offset_y = 0;
+    int cockpit_offset_x = 0;
+    int cockpit_offset_y = 0;
+#endif
 
 	if (HUD_toolong)
 		return;
@@ -782,10 +785,6 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 #ifdef USE_OPENVR
-    int offset_x = 0;
-    int offset_y = 0;
-    int cockpit_offset_x = 0;
-    int cockpit_offset_y = 0;
 	x = HUD_SCALE_X(8);
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
 		cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 2.25;
@@ -838,6 +837,12 @@ void hud_show_score_added()
 	int	w, h, aw;
 	char	score_str[20];
 	int top_margin;
+#ifdef USE_OPENVR
+    int offset_x = 0;
+    int offset_y = 0;
+    int cockpit_offset_x = 0;
+    int cockpit_offset_y = 0;
+#endif
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		return;
@@ -865,10 +870,6 @@ void hud_show_score_added()
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
 #ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;        
-        int cockpit_offset_x = 0;
-        int cockpit_offset_y = 0;
     	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
 		    cockpit_offset_x = grd_curcanv->cv_bitmap.bm_w / 2.125;
 	    	cockpit_offset_y = grd_curcanv->cv_bitmap.bm_h / 6;
@@ -889,13 +890,17 @@ void sb_show_score()
 	char	score_str[20];
 	int x,y;
 	int	w, h, aw;
+	int draw_x;
+	int draw_y;
+	int draw_right;
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+#endif
 
 	int pnum = get_pnum_for_hud();
 
 #ifdef USE_OPENVR
-	int offset_x = 0;
-	int offset_y = 0;
-
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -924,13 +929,13 @@ void sb_show_score()
 	x = HUD_SCALE_X(SB_SCORE_RIGHT)-w-FSPACX(1);
 	y = HUD_SCALE_Y(SB_SCORE_Y);
 #ifdef USE_OPENVR
-	int draw_x = x + offset_x;
-	int draw_y = y + offset_y;
-	int draw_right = HUD_SCALE_X(SB_SCORE_RIGHT) + offset_x;
+	draw_x = x + offset_x;
+	draw_y = y + offset_y;
+	draw_right = HUD_SCALE_X(SB_SCORE_RIGHT) + offset_x;
 #else
-	int draw_x = x;
-	int draw_y = y;
-	int draw_right = HUD_SCALE_X(SB_SCORE_RIGHT);
+	draw_x = x;
+	draw_y = y;
+	draw_right = HUD_SCALE_X(SB_SCORE_RIGHT);
 #endif
 
 	//erase old score
@@ -1219,12 +1224,13 @@ void hud_show_energy(void)
 	int pnum = get_pnum_for_hud();
 
 	if (PlayerCfg.HudMode<2) {
-		gr_set_curfont( GAME_FONT );
-		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 #ifdef USE_OPENVR
         int offset_x = 0;
         int offset_y = 0;
-
+#endif
+		gr_set_curfont( GAME_FONT );
+		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
+#ifdef USE_OPENVR
         cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 
@@ -1728,6 +1734,7 @@ void hud_show_lives()
 {
 	int x;
 	int top_margin;
+	int pnum = get_pnum_for_hud();
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
@@ -1736,7 +1743,6 @@ void hud_show_lives()
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
-	int pnum = get_pnum_for_hud();
 
 	if (HUD_toolong)
 		return;
@@ -1780,15 +1786,14 @@ void hud_show_lives()
 void sb_show_lives()
 {
 	int x,y;
+	int pnum = get_pnum_for_hud();
+	grs_bitmap * bm = &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ];
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
-	int pnum = get_pnum_for_hud();
-
-	grs_bitmap * bm = &GameBitmaps[ GET_GAUGE_INDEX(GAUGE_LIVES) ];
 	x = SB_LIVES_X;
 	y = SB_LIVES_Y;
 
@@ -2031,15 +2036,18 @@ void cockpit_decode_alpha(grs_bitmap *bm)
 void draw_wbu_overlay()
 {
 	unsigned cockpit_idx = PlayerCfg.CurrentCockpitMode+(HIRESMODE?(Num_cockpits/2):0);
+	grs_bitmap *bm;
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+#endif
+
 	PIGGY_PAGE_IN(cockpit_bitmap[cockpit_idx]);
-	grs_bitmap *bm = &GameBitmaps[cockpit_bitmap[cockpit_idx].index];
+	bm = &GameBitmaps[cockpit_bitmap[cockpit_idx].index];
 
 	cockpit_decode_alpha(bm);
 
 #ifdef USE_OPENVR
-	int offset_x = 0;
-	int offset_y = 0;
-
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	if (WinBoxOverlay[0] != NULL){
@@ -2716,12 +2724,13 @@ void sb_draw_energy_bar(int energy)
 	int erase_height;
 	int ew, eh, eaw;
 	int energy_x;
-
-	PAGE_IN_GAUGE( SB_GAUGE_ENERGY );
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
+#endif
 
+	PAGE_IN_GAUGE( SB_GAUGE_ENERGY );
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 #ifdef USE_OPENVR
@@ -2756,12 +2765,13 @@ void sb_draw_afterburner()
 	int erase_height, w, h, aw, i;
 	char ab_str[3] = "AB";
 	int pnum = get_pnum_for_hud();
-
-	PAGE_IN_GAUGE( SB_GAUGE_AFTERBURNER );
 #ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
+#endif
 
+	PAGE_IN_GAUGE( SB_GAUGE_AFTERBURNER );
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 	hud_bitblt(HUD_SCALE_X(SB_AFTERBURNER_GAUGE_X) + offset_x, HUD_SCALE_Y(SB_AFTERBURNER_GAUGE_Y) + offset_y, &GameBitmaps[GET_GAUGE_INDEX(SB_GAUGE_AFTERBURNER)]);
 #else
