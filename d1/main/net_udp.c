@@ -3570,7 +3570,7 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 	if (multi_i_am_master())
 	{
 		ubyte pnum = data[5];
-		if(pnum < 1 || pnum > MAX_PLAYERS || pnum == multi_who_is_master()) {
+		if(pnum < 1 || pnum >= MAX_PLAYERS || pnum == multi_who_is_master()) {
 			drop_rx_packet(data, "invalid player number"); 
 			return; 
 		}
