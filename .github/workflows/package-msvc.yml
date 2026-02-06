@@ -53,8 +53,13 @@ jobs:
     - name: Build D2
       run: cmake --build buildd2
 
+    - name: Package
+      shell: pwsh
+      run: |
+        Get-ChildItem -Path "buildd?/main/*.*" | Compress-Archive -DestinationPath "msvc-${{ matrix.arch }}.zip"
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: msvc-${{ matrix.arch }}
-        path: 'buildd?/main/*.*'
+        path: "msvc-${{ matrix.arch }}.zip"
