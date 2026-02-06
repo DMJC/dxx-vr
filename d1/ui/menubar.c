@@ -757,7 +757,7 @@ void ul_xlate(char *s)
 
 void menubar_init( char * file )
 {
-	int i,j, np;
+	int i,j, np, len;
 	int aw, w, h;
 	PHYSFS_file * infile;
 	char buffer[200];
@@ -805,7 +805,8 @@ void menubar_init( char * file )
 		Menu[menu].Item[item].InactiveText = d_strdup(Menu[menu].Item[item].Text);
 		
 		j= 0;
-		for (i=0; i<=strlen(Menu[menu].Item[item].Text); i++ )
+		len = strlen(Menu[menu].Item[item].Text);
+		for (i=0; i<=len; i++ )
 		{
 			np = Menu[menu].Item[item].Text[i];
 			if (np != CC_UNDERLINE) 
