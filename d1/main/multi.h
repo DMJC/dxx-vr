@@ -28,6 +28,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Need these for non network builds too -Chris
 #define MAX_MESSAGE_LEN 35
 
+#define N_TEAMS 2
+
 #ifdef USE_UDP
 #ifdef _WIN32
 #ifdef _WIN32_WINNT
@@ -476,12 +478,12 @@ typedef struct netgame_info
 	short						AlwaysLighting; // (unused in D1 - cannot destroy lights after all)
 	short						ShowEnemyNames;
 	short						BrightPlayers;
-	char						team_name[2][CALLSIGN_LEN+1];
-	signed char						TeamKillGoalCount[2]; 
+	char						team_name[N_TEAMS][CALLSIGN_LEN+1];
+	signed char						TeamKillGoalCount[N_TEAMS];
 	int						locations[MAX_PLAYERS];
 	short						kills[MAX_PLAYERS][MAX_PLAYERS];
 	ushort						segments_checksum;
-	short						team_kills[2];
+	short						team_kills[N_TEAMS];
 	short						killed[MAX_PLAYERS];
 	short						player_kills[MAX_PLAYERS];
 	int						KillGoal;
@@ -515,7 +517,7 @@ typedef struct netgame_info
 	ubyte						AllowCustomModelsTextures;
 	ubyte						ReducedFlash;
 	ubyte						GaussAmmoStyle;
-	ubyte						team_color[2];
+	ubyte						team_color[N_TEAMS];
 	ubyte						NewSpawnAlgorithm;
 } __pack__ netgame_info;
 
