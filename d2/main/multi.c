@@ -3504,6 +3504,9 @@ extern int Proximity_dropped, Smartmines_dropped;
  */
 
 // Count the initial amount of Powerups in the level
+int is_dupable_primary(int id);
+int is_dupable_secondary(int id);
+
 void multi_powcap_count_powerups_in_mine(void)
 {
 	int i;
@@ -3550,18 +3553,17 @@ void multi_powcap_cap_objects()
 	Proximity_dropped=0;
 	Smartmines_dropped=0;
 
-	// Don't even try.  TODO: There is no try, only do.
-	if(Netgame.PrimaryDupFactor > 1 || Netgame.SecondaryDupFactor > 1 || Netgame.SecondaryCapFactor > 1 ) {
-		return;
-	}
-
 	for (index=0;index<MAX_PRIMARY_WEAPONS;index++)
 	{
 		type=Primary_weapon_to_powerup[index];
-		if (PowerupsInMine[(int)type]>=MaxPowerupsAllowed[(int)type])
+		int effective_limit = MaxPowerupsAllowed[(int)type];
+		if (Netgame.PrimaryDupFactor > 1 && is_dupable_primary(type))
+			effective_limit *= Netgame.PrimaryDupFactor;
+
+		if (PowerupsInMine[(int)type]>=effective_limit)
 			if(Players[Player_num].primary_weapon_flags & (1 << index))
 			{
-				con_printf(CON_VERBOSE,"PIM=%d MPA=%d\n",PowerupsInMine[(int)type],MaxPowerupsAllowed[(int)type]);
+				con_printf(CON_VERBOSE,"PIM=%d MPA=%d\n",PowerupsInMine[(int)type],effective_limit);
 				con_printf(CON_VERBOSE,"Killing a primary cuz there's too many! (%d)\n",type);
 				Players[Player_num].primary_weapon_flags&=(~(1 << index));
 			}
@@ -3580,14 +3582,28 @@ void multi_powcap_cap_objects()
 			continue;
 
 		type=Secondary_weapon_to_powerup[index];
+		int effective_limit = MaxPowerupsAllowed[(int)type];
+		if (Netgame.SecondaryDupFactor > 1 && is_dupable_secondary(type))
+			effective_limit *= Netgame.SecondaryDupFactor;
 
-		if ((Players[Player_num].secondary_ammo[index]+PowerupsInMine[(int)type])>MaxPowerupsAllowed[(int)type])
+		if (Netgame.SecondaryCapFactor > 0)
 		{
-			if (MaxPowerupsAllowed[(int)type]-PowerupsInMine[(int)type]<0)
+			int cap_limit = -1;
+			if (type == POW_HOMING_AMMO_1 || type == POW_SMISSILE1_1 || type == POW_GUIDED_MISSILE_1 || type == POW_MERCURY_MISSILE_1 || type == POW_SMARTBOMB_WEAPON)
+				cap_limit = (Netgame.SecondaryCapFactor == 1) ? 6 : 2;
+
+			if (cap_limit != -1)
+				if (effective_limit > cap_limit)
+					effective_limit = cap_limit;
+		}
+
+		if ((Players[Player_num].secondary_ammo[index]+PowerupsInMine[(int)type])>effective_limit)
+		{
+			if (effective_limit-PowerupsInMine[(int)type]<0)
 				Players[Player_num].secondary_ammo[index]=0;
 			else
-				Players[Player_num].secondary_ammo[index]=(MaxPowerupsAllowed[(int)type]-PowerupsInMine[(int)type]);
-			con_printf(CON_VERBOSE,"Hey! I killed secondary type %d because PIM=%d MPA=%d\n",type,PowerupsInMine[(int)type],MaxPowerupsAllowed[(int)type]);
+				Players[Player_num].secondary_ammo[index]=(effective_limit-PowerupsInMine[(int)type]);
+			con_printf(CON_VERBOSE,"Hey! I killed secondary type %d because PIM=%d MPA=%d\n",type,PowerupsInMine[(int)type],effective_limit);
 		}
 	}
 
