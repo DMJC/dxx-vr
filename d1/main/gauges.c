@@ -55,6 +55,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "net_udp.h"
 #include "scores.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 #include <math.h>
 
 //bitmap numbers for gauges
@@ -345,6 +348,39 @@ extern fix Cruise_speed;
 extern int linedotscale;
 
 int Observer_message_y_start = 0;
+
+
+void cockpit_gauge_offset(int *x, int *y)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		{
+			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
+			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
+			const float x_ndc = (r + l) / (r - l);
+			const float y_ndc = (t + b) / (t - b);
+			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
+			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
+
+			offset_x = center_x - (int)(grd_curcanv->cv_bitmap.bm_w * 0.5f);
+			offset_y = center_y - (int)(grd_curcanv->cv_bitmap.bm_h * 0.5f);
+		}
+	}
+#endif
+
+	*x = offset_x;
+	*y = offset_y;
+}
 
 typedef struct gauge_box {
 	int left,top;
@@ -693,19 +729,25 @@ span weapon_window_right_hires[] = {
 
 static inline void hud_bitblt_free (int x, int y, int w, int h, grs_bitmap *bm)
 {
+	int offset_x = 0;
+	int offset_y = 0;
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #ifdef OGL
-	ogl_ubitmapm_cs (x,y,w,h,bm,-1,F1_0);
+	ogl_ubitmapm_cs (x + offset_x, y + offset_y, w, h, bm, -1, F1_0);
 #else
-	gr_ubitmapm(x, y, bm);
+	gr_ubitmapm(x + offset_x, y + offset_y, bm);
 #endif
 }
 
 static inline void hud_bitblt (int x, int y, grs_bitmap *bm)
 {
+	int offset_x = 0;
+	int offset_y = 0;
+	cockpit_gauge_offset(&offset_x, &offset_y);
 #ifdef OGL
-	ogl_ubitmapm_cs (x,y,HUD_SCALE_X (bm->bm_w),HUD_SCALE_Y (bm->bm_h),bm,-1,F1_0);
+	ogl_ubitmapm_cs (x + offset_x, y + offset_y, HUD_SCALE_X (bm->bm_w), HUD_SCALE_Y (bm->bm_h), bm, -1, F1_0);
 #else
-	gr_ubitmapm(x, y, bm);
+	gr_ubitmapm(x + offset_x, y + offset_y, bm);
 #endif
 }
 
