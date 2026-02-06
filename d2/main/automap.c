@@ -543,9 +543,13 @@ static void draw_automap_to_canvas(automap *am)
 
 	{
 		const int map_x = (grd_curcanv->cv_bitmap.bm_w/23);
-		const int map_y = (grd_curcanv->cv_bitmap.bm_h/6);
 		const int map_w = (grd_curcanv->cv_bitmap.bm_w/1.1);
 		const int map_h = (grd_curcanv->cv_bitmap.bm_h/1.45);
+		int map_y = (grd_curcanv->cv_bitmap.bm_h/6);
+
+		if (am->rendering_to_vr_texture)
+			map_y = grd_curcanv->cv_bitmap.bm_h - map_y - map_h;
+
 		gr_init_sub_canvas(&am->automap_view, grd_curcanv, map_x, map_y, map_w, map_h);
 	}
 
