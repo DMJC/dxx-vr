@@ -1041,7 +1041,6 @@ int game_handler(window *wind, d_event *event, void *data)
 
 			songs_play_song( SONG_TITLE, 1 );
 			set_screen_mode(SCREEN_MENU);
-
 			game_disable_cheats();
 			Game_mode = GM_GAME_OVER;
 			if (GameArg.GameLogSplit)

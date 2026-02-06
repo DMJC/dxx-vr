@@ -67,6 +67,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -135,6 +138,7 @@ typedef struct automap
 	int			blue_48;
 	int			red_48;
 	control_info controls;
+	int rendering_to_vr_texture;
 } automap;
 
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
@@ -334,8 +338,7 @@ static void automap_apply_input(automap *am)
 	}
 }
 
-
-void draw_automap(automap *am)
+static void draw_automap_to_canvas(automap *am)
 {
 	int i;
 	int color;
@@ -369,6 +372,13 @@ void draw_automap(automap *am)
 		gr_string(265*(SWIDTH/640.0), 61*(SHEIGHT/480.0), "F9/F10 Changes viewing distance");
 	}
 	
+	{
+		const int map_x = (grd_curcanv->cv_bitmap.bm_w/23);
+		const int map_y = (grd_curcanv->cv_bitmap.bm_h/6);
+		const int map_w = (grd_curcanv->cv_bitmap.bm_w/1.1);
+		const int map_h = (grd_curcanv->cv_bitmap.bm_h/1.45);
+		gr_init_sub_canvas(&am->automap_view, grd_curcanv, map_x, map_y, map_w, map_h);
+	}
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -447,6 +457,34 @@ void draw_automap(automap *am)
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator) /* Old School Mouse */
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
+}
+
+void draw_automap(automap *am)
+{
+	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
+		am->leave_mode = 1;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		if (eye == 0)
+		{
+			vr_openvr_bind_menu_target();
+			am->rendering_to_vr_texture = 1;
+			draw_automap_to_canvas(am);
+			am->rendering_to_vr_texture = 0;
+			vr_openvr_unbind_menu_target();
+		}
+		if (eye >= 0)
+			vr_openvr_draw_menu_quad_for_eye(eye, 0, 1.2f, 1, 1);
+	}
+	else
+#endif
+	{
+		am->rendering_to_vr_texture = 0;
+		draw_automap_to_canvas(am);
+	}
 
 	am->t2 = timer_query();
 	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
