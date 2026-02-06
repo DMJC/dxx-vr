@@ -31,6 +31,9 @@
 #include "laser.h"
 #include "args.h"
 #include "playsave.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 typedef struct hudmsg
 {
@@ -45,6 +48,14 @@ static int HUD_nmessages = 0;
 int HUD_toolong = 0;
 static int HUD_color = -1;
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
+static inline int vr_hud_top_margin_y(void)
+{
+#ifdef USE_OPENVR
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
+		return grd_curcanv->cv_bitmap.bm_h / 10;
+#endif
+	return 0;
+}
 
 void HUD_clear_messages()
 {
@@ -60,6 +71,7 @@ void HUD_clear_messages()
 void HUD_render_message_frame()
 {
 	int i,j,y;
+	int top_margin;
 
 	HUD_toolong = 0;
 
@@ -94,18 +106,28 @@ void HUD_render_message_frame()
 			HUD_color = BM_XRGB(0,28,0);
 
 		gr_set_curfont( GAME_FONT );
+		top_margin = vr_hud_top_margin_y();
 
 		if (is_observer())
-            y = Observer_message_y_start;
+			y = Observer_message_y_start + top_margin;
 		else
-			y = FSPACY(1);
+			y = FSPACY(1) + top_margin;
 
 		for (i=startmsg; i<HUD_nmessages; i++ )	{
 			gr_set_fontcolor( HUD_color, -1);
 
 			if (i == startmsg && strlen(HUD_messages[i].message) > 38)
 				HUD_toolong = 1;
+#ifdef USE_OPENVR
+			{
+				int offset_x = 0;
+				int offset_y = 0;
+				cockpit_gauge_offset(&offset_x, &offset_y);
+				gr_string(0x8000 + offset_x, y + offset_y, &HUD_messages[i].message[0]);
+			}
+#else
 			gr_string(0x8000,y, &HUD_messages[i].message[0] );
+#endif
 			y += LINE_SPACING;
 		}
 	}

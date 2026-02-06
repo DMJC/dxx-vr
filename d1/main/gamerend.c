@@ -530,6 +530,11 @@ extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 // This actually renders the new cockpit onto the screen.
 void update_cockpits()
 {
+	int cockpit_offset_x = 0;
+	int cockpit_offset_y = 0;
+
+	cockpit_gauge_offset(&cockpit_offset_x, &cockpit_offset_y);
+
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not draw cockpit.
 	} else {
@@ -544,17 +549,17 @@ void update_cockpits()
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (0, 0, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
 	#else
-				gr_ubitmapm(0,0, bm);
+				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
 	#endif
 				break;
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (0, 0, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
 	#else
-				gr_ubitmapm(0,0, bm);
+				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
 	#endif
 				break;
 			case CM_FULL_SCREEN:
@@ -563,9 +568,9 @@ void update_cockpits()
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (0, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
+				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y + (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
 	#else
-				gr_ubitmapm(0,SHEIGHT-bm->bm_h,bm);
+				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y + SHEIGHT-bm->bm_h,bm);
 	#endif
 				break;
 			case CM_LETTERBOX:
