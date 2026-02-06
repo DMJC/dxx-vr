@@ -47,8 +47,34 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h"
 #include "hudmsg.h"
 #include "playsave.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 #define NEWHOMER
+
+#ifdef USE_OPENVR
+static vms_vector vr_get_player_shot_orientation(const object *obj)
+{
+	vms_vector dir = obj->orient.fvec;
+	vms_matrix head_orient;
+	vms_vector head_pos;
+
+	if (vr_openvr_active() && vr_openvr_head_pose(&head_orient, &head_pos))
+	{
+		vms_matrix shot_matrix;
+		vm_matrix_x_matrix(&shot_matrix, &obj->orient, &head_orient);
+		dir = shot_matrix.fvec;
+	}
+
+	return dir;
+}
+#else
+static vms_vector vr_get_player_shot_orientation(const object *obj)
+{
+	return obj->orient.fvec;
+}
+#endif
 
 int Network_laser_track = -1;
 
@@ -889,7 +915,7 @@ void Flare_create(object *obj)
 			auto_select_weapon(0);
 		}
 
-		Laser_player_fire( obj, FLARE_ID, 6, 1, 0, Objects[Players[Player_num].objnum].orient.fvec); /* CED sniperpackets */
+		Laser_player_fire( obj, FLARE_ID, 6, 1, 0, vr_get_player_shot_orientation(&Objects[Players[Player_num].objnum])); /* CED sniperpackets */
 
 		#ifdef NETWORK
 		if (Game_mode & GM_MULTI)
@@ -1159,7 +1185,7 @@ void do_laser_firing_player(void)
 				flags |= LASER_QUAD;
 
 			/* CED sniperpackets */ 
-			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires, Objects[Players[Player_num].objnum].orient.fvec);
+			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires, vr_get_player_shot_orientation(&Objects[Players[Player_num].objnum]));
 
 			int warning_increment = 250/12;
 			int pre_ammo = plp->primary_ammo[VULCAN_INDEX];
@@ -1512,7 +1538,7 @@ void do_missile_firing(int drop_bomb)
 		else
 			Next_missile_fire_time = GameTime64 + (F1_0/25) - fire_frame_overhead;
 
-		vms_vector orient = Objects[Players[Player_num].objnum].orient.fvec;
+		vms_vector orient = vr_get_player_shot_orientation(&Objects[Players[Player_num].objnum]);
 
 		switch (weapon) {
 			case CONCUSSION_INDEX:
@@ -1626,5 +1652,4 @@ void net_missile_firing(int player, int gun, int flags, vms_vector shot_orientat
 
 }
 #endif
-
 
