@@ -2089,7 +2089,8 @@ multi_do_fire(const ubyte *buf)
 	shot_orientation.z = (fix) GET_INTEL_INT(buf + 16); 
 
 
-	Assert (pnum < N_players);
+	if (pnum >= N_players)
+		return;
 
 	if (Objects[Players[pnum].objnum].type == OBJ_GHOST)
 		multi_make_ghost_player(pnum);
@@ -2202,6 +2203,9 @@ multi_do_position(const ubyte *buf)
 
 	pnum = buf[1];
 
+	if (pnum >= N_players)
+		return;
+
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[Players[pnum].objnum], (shortpos *)(buf + 2),0);
 #else
@@ -2219,6 +2223,9 @@ multi_do_reappear(const ubyte *buf)
 {
 	short objnum;
 	ubyte pnum = buf[1];
+
+	if (pnum >= N_players)
+		return;
 
 	objnum = GET_INTEL_SHORT(buf + 2);
 
@@ -2699,7 +2706,8 @@ multi_do_cloak(const ubyte *buf)
 
 	pnum = buf[1];
 
-	Assert(pnum < N_players);
+	if (pnum >= N_players)
+		return;
 
 	Players[pnum].flags |= PLAYER_FLAGS_CLOAKED;
 	Players[pnum].cloak_time = GameTime64;
@@ -2731,7 +2739,8 @@ multi_do_invuln(const ubyte *buf)
 
 	pnum = buf[1];
 
-	Assert(pnum < N_players);
+	if (pnum >= N_players)
+		return;
 
 	Players[pnum].flags |= PLAYER_FLAGS_INVULNERABLE;
 	Players[pnum].invulnerable_time = GameTime64;
@@ -2785,6 +2794,9 @@ multi_do_create_explosion(const ubyte *buf)
 
 	pnum = buf[count++];
 
+	if (pnum >= N_players)
+		return;
+
 	create_small_fireball_on_object(&Objects[Players[pnum].objnum], F1_0, 1);
 }
 
@@ -2826,6 +2838,9 @@ multi_do_create_powerup(const ubyte *buf)
 	powerup_type = buf[count++];
 	segnum = GET_INTEL_SHORT(buf + count); count += 2;
 	objnum = GET_INTEL_SHORT(buf + count); count += 2;
+
+	if (pnum >= N_players)
+		return;
 
 	if ((segnum < 0) || (segnum > Highest_segment_index)) {
 		Int3();
@@ -2877,6 +2892,9 @@ multi_do_play_sound(const ubyte *buf)
 	int pnum = buf[1];
 	int sound_num = buf[2];
 	fix volume = buf[3] << 12;
+
+	if (pnum >= N_players)
+		return;
 
 	if (!Players[pnum].connected)
 		return;
