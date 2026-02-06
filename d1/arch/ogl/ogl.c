@@ -54,7 +54,6 @@
 #include "gauges.h"
 #include "playsave.h"
 #include "args.h"
-#include "vr_openvr.h"
 #include "xmodel.h"
 #include "oglprog.h"
 
@@ -1192,9 +1191,6 @@ void gr_flip(void)
 {
 	if (GameArg.DbgRenderStats)
 		ogl_texture_stats();
-
-	if (vr_openvr_active())
-		vr_openvr_submit_mono_from_screen(1);
 
 	ogl_do_palfx();
 	ogl_swap_buffers_internal();

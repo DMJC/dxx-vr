@@ -14,6 +14,10 @@
 #include "timer.h"
 #include "config.h"
 #include "args.h"
+#ifdef OGL
+#include "vr_openvr.h"
+#include "screens.h"
+#endif
 
 #include "joy.h"
 
@@ -195,23 +199,70 @@ void event_process(void)
 	// such as some network menus when they report a problem
 	if (window_get_front() != wind)
 		return;
-	
+
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
-	wind = window_get_first();
-	while (wind != NULL)
+#ifdef OGL
+	int use_vr_menu = vr_openvr_active();
+	if (use_vr_menu)
 	{
-		window *prev = window_get_prev(wind);
-		if (window_is_visible(wind))
-			window_send_event(wind, &event);
-		if (!window_exists(wind))
+		vr_openvr_begin_frame();
+		int vr_w, vr_h;
+		vr_openvr_render_size(&vr_w, &vr_h);
+		if (vr_w > 0 && vr_h > 0)
 		{
-			if (!prev) // well there isn't a previous window ...
-				break; // ... just bail out - we've done everything for this frame we can.
-			wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
+			grd_curscreen->sc_w = vr_w;
+			grd_curscreen->sc_h = vr_h;
+			gr_set_current_canvas(NULL);
+			grd_curcanv->cv_bitmap.bm_w = vr_w;
+			grd_curcanv->cv_bitmap.bm_h = vr_h;
 		}
-		else
-			wind = window_get_next(wind);
 	}
+#endif
+
+	for (int eye = 0; eye < 2; eye++)
+	{
+#ifdef OGL
+		if (Screen_mode == SCREEN_GAME)
+			vr_openvr_bind_eye(eye);
+		else if (use_vr_menu)
+			vr_openvr_bind_menu_target();
+#endif
+
+		wind = window_get_first();
+		while (wind != NULL)
+		{
+			window *prev = window_get_prev(wind);
+			if (window_is_visible(wind))
+				window_send_event(wind, &event);
+			if (!window_exists(wind))
+			{
+				if (!prev) // well there isn't a previous window ...
+					break; // ... just bail out - we've done everything for this frame we can.
+				wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
+			}
+			else
+				wind = window_get_next(wind);
+		}
+
+#ifdef OGL
+		if (Screen_mode == SCREEN_GAME)
+			vr_openvr_unbind_eye();
+		else if (use_vr_menu)
+		{
+			vr_openvr_unbind_menu_target();
+			break;
+		}
+#else
+		break;
+#endif
+	}
+
+#ifdef OGL
+	if (Screen_mode == SCREEN_GAME)
+		vr_openvr_submit_eyes();
+	else if (use_vr_menu)
+		vr_openvr_submit_menu(1);
+#endif
 
 	gr_flip();
 }
