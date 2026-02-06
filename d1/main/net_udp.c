@@ -6947,11 +6947,11 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 	if(direct_ping) {
 		// Don't update master, non-existent player, or me
 		if( (from_player == multi_who_is_master()) || 
-			(from_player > MAX_PLAYERS) || 
+		(from_player >= MAX_PLAYERS) ||
 			(from_player == Player_num)) {
 
 			char log_comment[100];
-			snprintf(log_comment, 100, "Cannot update address -- illegal player num %d (==%d, >%d, == %d)", from_player,
+		snprintf(log_comment, 100, "Cannot update address -- illegal player num %d (==%d, >=%d, == %d)", from_player,
 				multi_who_is_master(), MAX_PLAYERS, Player_num); 
 			net_log_comment(log_comment); 
 		} else {
@@ -7013,7 +7013,7 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 		Netgame.players[from_player].ping = 9999;
 
 	// Don't update master, non-existent player, or me
-	if(from_player < 1 || from_player > MAX_PLAYERS || from_player == Player_num) {
+	if(from_player < 1 || from_player >= MAX_PLAYERS || from_player == Player_num) {
 		return;
 	}
 
