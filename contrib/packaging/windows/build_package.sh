@@ -46,8 +46,15 @@ build_app() {
     rm -rf ${tmpdir}
 }
 
-build_app "buildd1/main" "d1x-redux" "D1X-Redux"
-build_app "buildd2/main" "d2x-redux" "D2X-Redux"
+if [ -d "buildd1" ]; then
+    build_app "buildd1/main" "d1x-redux" "D1X-Redux"
+fi
+if [ -d "buildd2" ]; then
+    build_app "buildd2/main" "d2x-redux" "D2X-Redux"
+fi
+if [ -d "buildd2-vr" ]; then
+    build_app "buildd2-vr/main" "d2x-redux" "D2X-Redux-VR"
+fi
 
 # Clean up
 

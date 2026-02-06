@@ -32,6 +32,11 @@ build_appimage() {
     name="$1"
     prettyname="$2"
     dir="${name:0:2}"
+    builddir="$3"
+
+    if [ -z "$builddir" ]; then
+        builddir="build${dir}"
+    fi
 
     appdir="${name}.appdir"
     appimagename="${prettyname}.AppImage"
@@ -45,7 +50,7 @@ build_appimage() {
 
     # Executable
     mkdir -p ${appdir}/usr/bin
-    cp build${dir}/main/${name} ${appdir}/usr/bin
+    cp ${builddir}/main/${name} ${appdir}/usr/bin
 
     # Icons
     mkdir -p ${appdir}/usr/share/pixmaps
@@ -88,8 +93,15 @@ build_appimage() {
 }
 
 # Build each subunit
-build_appimage "d1x-redux" "d1x-redux"
-build_appimage "d2x-redux" "d2x-redux"
+if [ -d "buildd1" ]; then
+    build_appimage "d1x-redux" "d1x-redux"
+fi
+if [ -d "buildd2" ]; then
+    build_appimage "d2x-redux" "d2x-redux"
+fi
+if [ -d "buildd2-vr" ]; then
+    build_appimage "d2x-redux" "d2x-redux-vr" "buildd2-vr"
+fi
 
 # Clean
 rm -f appimagetool* AppRun* linuxdeploy-*

@@ -37,6 +37,12 @@ jobs:
       - name: Build D2
         run: cmake --build buildd2
 
+      - name: Configure D2 VR
+        run: cmake -S d2 -B buildd2-vr -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOpenGL_GL_PREFERENCE=LEGACY -DOPENVR=ON
+
+      - name: Build D2 VR
+        run: cmake --build buildd2-vr
+
       - name: Package AppImage
         run: ./contrib/packaging/linux/build_package.sh
 
