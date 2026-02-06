@@ -826,7 +826,7 @@ int briefing_process_char(briefing *br)
 			br->chattering = 0;
 			if (br->printing_channel >- 1)
 				digi_stop_sound(br->printing_channel);
-			br->printing_channel =- 1;
+			br->printing_channel = -1;
 
 			br->new_screen = 1;
 			return 1;
@@ -840,7 +840,7 @@ int briefing_process_char(briefing *br)
 			br->chattering = 0;
 			if (br->printing_channel >- 1)
 				digi_stop_sound(br->printing_channel);
-			br->printing_channel =- 1;
+			br->printing_channel = -1;
 
 			br->new_page = 1;
 

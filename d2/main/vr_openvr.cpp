@@ -17,9 +17,6 @@ extern "C" {
 #include "gr.h"
 #include "gamefont.h"
 extern int last_width, last_height;
-#ifdef _WIN32
-const vms_matrix vmd_identity_matrix = IDENTITY_MATRIX;
-#endif
 extern int sdl_window_width, sdl_window_height;
 }
 
