@@ -32,8 +32,8 @@ jobs:
             mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-physfs
-            mingw-w64-x86_64-SDL
-            mingw-w64-x86_64-SDL_mixer
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-SDL2_mixer
             mingw-w64-x86_64-libpng
             mingw-w64-x86_64-glew
             mingw-w64-x86_64-ntldd-git
