@@ -19,8 +19,14 @@ if(SDLMIXER)
         digi_mixer_music.c
         jukebox.c
         )
-    target_include_directories(arch_sdl PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
-    target_link_libraries(arch_sdl ${SDL2_MIXER_LIBRARIES})
+    if(TARGET SDL2_mixer::SDL2_mixer)
+        target_link_libraries(arch_sdl PUBLIC SDL2_mixer::SDL2_mixer)
+    elseif(TARGET SDL2_mixer::SDL2_mixer-static)
+        target_link_libraries(arch_sdl PUBLIC SDL2_mixer::SDL2_mixer-static)
+    else()
+        target_include_directories(arch_sdl PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
+        target_link_libraries(arch_sdl PUBLIC ${SDL2_MIXER_LIBRARIES})
+    endif()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include ${CMAKE_SOURCE_DIR}/main)
