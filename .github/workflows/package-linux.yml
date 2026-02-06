@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y fuse
-          sudo apt-get install -y cmake libphysfs-dev libsdl2-dev libsdl2-mixer-dev libpng-dev libglew-dev
+          sudo apt-get install -y cmake libphysfs-dev libsdl2-dev libsdl2-mixer-dev libpng-dev libglew-dev libopenvr-dev
 
       - name: Configure D1
         run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOpenGL_GL_PREFERENCE=LEGACY
