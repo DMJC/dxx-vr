@@ -521,9 +521,9 @@ void game_draw_hud_stuff()
 #ifdef NETWORK
 	game_draw_multi_message();
 #endif
-#ifdef USE_OPENVR
         int offset_x = 0;
         int offset_y = 0;
+#ifdef USE_OPENVR
         cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	game_draw_marker_message();
