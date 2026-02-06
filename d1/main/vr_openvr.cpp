@@ -539,9 +539,7 @@ int vr_openvr_current_eye(void)
 #ifdef USE_OPENVR
 	if (!vr_openvr_active())
 		return -1;
-	if (vr_current_eye < 0)
-		return -1;
-	return 1 - vr_current_eye;
+	return vr_current_eye;
 #else
 	return -1;
 #endif
