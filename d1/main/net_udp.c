@@ -3570,7 +3570,7 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 	if (multi_i_am_master())
 	{
 		ubyte pnum = data[5];
-		if(pnum < 1 || pnum > MAX_PLAYERS || pnum == multi_who_is_master()) {
+		if(pnum < 1 || pnum >= MAX_PLAYERS || pnum == multi_who_is_master()) {
 			drop_rx_packet(data, "invalid player number"); 
 			return; 
 		}
@@ -6916,6 +6916,12 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 	len++; // Skip packet id
 	len += 4; // token
 	int from_player = data[len]; len++; 
+
+	if(from_player >= MAX_PLAYERS) {
+		drop_rx_packet(data, "invalid player number");
+		return;
+	}
+
 	fix64 time;
 	memcpy(&time, data + len, 8); len += 8; 
 	int direct_ping = data[len]; len++;
@@ -6947,12 +6953,11 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 	if(direct_ping) {
 		// Don't update master, non-existent player, or me
 		if( (from_player == multi_who_is_master()) || 
-			(from_player > MAX_PLAYERS) || 
 			(from_player == Player_num)) {
 
 			char log_comment[100];
-			snprintf(log_comment, 100, "Cannot update address -- illegal player num %d (==%d, >%d, == %d)", from_player,
-				multi_who_is_master(), MAX_PLAYERS, Player_num); 
+			snprintf(log_comment, 100, "Cannot update address -- illegal player num %d (==%d, == %d)", from_player,
+				multi_who_is_master(), Player_num);
 			net_log_comment(log_comment); 
 		} else {
 			update_address_for_player(from_player, sender_addr);
@@ -6999,6 +7004,11 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 	int len = 1; // Skip pid
 	len += 4; // token 
 	int from_player = data[len]; len++;
+
+	if(from_player >= MAX_PLAYERS) {
+		return;
+	}
+
 	fix64 sent_time;
 	memcpy(&sent_time, data + len, 8); len += 8;
 	int direct_pong = data[len]; len++;
@@ -7013,7 +7023,7 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 		Netgame.players[from_player].ping = 9999;
 
 	// Don't update master, non-existent player, or me
-	if(from_player < 1 || from_player > MAX_PLAYERS || from_player == Player_num) {
+	if(from_player < 1 || from_player == Player_num) {
 		return;
 	}
 
