@@ -17,6 +17,7 @@ extern "C" {
 #include "gr.h"
 #include "gamefont.h"
 extern int last_width, last_height;
+extern int sdl_window_width, sdl_window_height;
 #ifdef _WIN32
 const vms_matrix vmd_identity_matrix = IDENTITY_MATRIX;
 #endif
@@ -60,6 +61,7 @@ static int vr_current_eye = -1;
 static bool vr_has_pose = false;
 static vms_matrix vr_head_orient = vmd_identity_matrix;
 static vms_vector vr_head_pos = {0, 0, 0};
+static bool vr_skip_mirror_blit = false;
 
 static void vr_openvr_release_gl(void)
 {
@@ -669,19 +671,15 @@ void vr_openvr_submit_eyes(void)
 	vr_compositor->Submit(vr::Eye_Left, &left);
 	vr_compositor->Submit(vr::Eye_Right, &right);
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, vr_eye_fbo[0]);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	//glViewport(0, 0, sdl_window_width, sdl_window_height);
-	GLint blit_width = (GLint)vr_render_width;
-	GLint blit_height = (GLint)vr_render_height;
-	/*
-	if (blit_width > sdl_window_width)
-		blit_width = sdl_window_width;
-	if (blit_height > grd_curscreen->sc_h)
-		blit_height = grd_curscreen->sc_h;
-	*/
-	glBlitFramebuffer(0, 0, blit_width, blit_height, 0, 0, grd_curscreen->sc_w, grd_curscreen->sc_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	if (!vr_skip_mirror_blit)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, vr_eye_fbo[0]);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		GLint blit_width = (GLint)vr_render_width;
+		GLint blit_height = (GLint)vr_render_height;
+		glBlitFramebuffer(0, 0, blit_width, blit_height, 0, 0, sdl_window_width, sdl_window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	}
 #endif
 #endif
 }
@@ -778,7 +776,7 @@ static void vr_openvr_submit_mono_from_buffer(int curved, int read_front)
 
 	for (int eye = 0; eye < 2; eye++)
 	{
-		vr_openvr_draw_menu_quad_for_eye(eye, curved, 1.0f, 1, 0);
+		vr_openvr_draw_menu_quad_for_eye(eye, curved, 1.0f, 1, 1);
 	}
     if (prev_read_fbo)
 	{
@@ -793,7 +791,9 @@ static void vr_openvr_submit_mono_from_buffer(int curved, int read_front)
 #else
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_draw_fbo);
 #endif
+	vr_skip_mirror_blit = true;
 	vr_openvr_submit_eyes();
+	vr_skip_mirror_blit = false;
 #endif
 #endif
 }
@@ -868,7 +868,7 @@ void vr_openvr_submit_mono_from_screen(int curved)
 
 	for (int eye = 0; eye < 2; eye++)
 	{
-		vr_openvr_draw_menu_quad_for_eye(eye, curved, 1.0f, 1, 0);
+		vr_openvr_draw_menu_quad_for_eye(eye, curved, 1.0f, 1, 1);
 	}
 	if (prev_read_fbo)
 	{
@@ -883,7 +883,9 @@ void vr_openvr_submit_mono_from_screen(int curved)
 #else
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_draw_fbo);
 #endif
+	vr_skip_mirror_blit = true;
 	vr_openvr_submit_eyes();
+	vr_skip_mirror_blit = false;
 #endif
 #endif
 }
@@ -976,7 +978,9 @@ void vr_openvr_submit_mono_from_texture(unsigned int texture, float u, float v, 
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	vr_skip_mirror_blit = true;
 	vr_openvr_submit_eyes();
+	vr_skip_mirror_blit = false;
 #endif
 #endif
 }
