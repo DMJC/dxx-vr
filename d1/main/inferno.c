@@ -457,8 +457,10 @@ int main(int argc, char *argv[])
 				strcat(filename,".plr");
 			if(PHYSFSX_exists(filename,0))
 			{
+				char *src;
 				strcpy(strstr(filename,".plr"),"\0");
-				strcpy(Players[Player_num].callsign, GameArg.SysUsePlayersDir? &filename[8] : filename);
+				src = GameArg.SysUsePlayersDir? &filename[8] : filename;
+				snprintf(Players[Player_num].callsign, CALLSIGN_LEN + 1, "%s", src);
 				read_player_file();
 				WriteConfigFile();
 			}
