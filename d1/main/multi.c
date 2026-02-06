@@ -131,7 +131,7 @@ int   Network_message_reciever=-1;
 int   sorted_kills[MAX_PLAYERS];
 short kill_matrix[MAX_PLAYERS][MAX_PLAYERS];
 int   multi_goto_secret = 0;
-short team_kills[2];
+short team_kills[MAX_TEAMS];
 int   multi_quit_game = 0;
 const char GMNames[MULTI_GAME_TYPE_COUNT][MULTI_GAME_NAME_LENGTH]={
 	"Anarchy",
@@ -802,7 +802,7 @@ void multi_endlevel_score(void)
 	for (i=0;i<MAX_PLAYERS;i++)
 		Players[i].KillGoalCount=0;
 
-	for(i=0; i < 2; i++) {
+	for(i=0; i < MAX_TEAMS; i++) {
 		Netgame.TeamKillGoalCount[i] = 0; 
 	}
 
@@ -863,7 +863,7 @@ multi_new_game(void)
 		multi_sending_message[i] = 0;
 	}
 
-	for(i=0; i < 2; i++) {
+	for(i=0; i < MAX_TEAMS; i++) {
 		Netgame.TeamKillGoalCount[i] = 0; 
 	}
 
@@ -880,7 +880,9 @@ multi_new_game(void)
 		PowerupsInMine[i]=0;
 	}
 
-	team_kills[0] = team_kills[1] = 0;
+	for(i=0; i < MAX_TEAMS; i++) {
+		team_kills[i] = 0;
+	}
 	imulti_new_game=1;
 	multi_quit_game = 0;
 	Show_kill_list = 1;
@@ -1655,14 +1657,14 @@ multi_message_feedback(void)
 	if (!( ((colon = strstr(Network_message, ": ")) == NULL) || (colon-Network_message < 1) || (colon-Network_message > CALLSIGN_LEN) ))
 	{
 		sprintf(feedback_result, "%s ", TXT_MESSAGE_SENT_TO);
-		if ((Game_mode & GM_TEAM) && (atoi(Network_message) > 0) && (atoi(Network_message) < 3))
+		if ((Game_mode & GM_TEAM) && (atoi(Network_message) > 0) && (atoi(Network_message) <= MAX_TEAMS))
 		{
 			sprintf(feedback_result+strlen(feedback_result), "%s '%s'", TXT_TEAM, Netgame.team_name[atoi(Network_message)-1]);
 			found = 1;
 		}
 		if (Game_mode & GM_TEAM)
 		{
-			for (i = 0; i < 2; i++)
+			for (i = 0; i < MAX_TEAMS; i++)
 			{
 				if (!d_strnicmp(Netgame.team_name[i], Network_message, colon-Network_message))
 				{
@@ -4413,7 +4415,7 @@ void multi_send_kill_goal_counts()
 		count++;
 	}
 
-	for(i=0; i < 2; i++) {
+	for(i=0; i < MAX_TEAMS; i++) {
 		*(char *)(multibuf+count)=(char)Netgame.TeamKillGoalCount[i];
 		count++;
 	}
@@ -4431,7 +4433,7 @@ void multi_do_kill_goal_counts(const ubyte *buf)
 		count++;
 	}
 
-	for (i=0;i<2;i++)
+	for (i=0;i<MAX_TEAMS;i++)
 	{
 		Netgame.TeamKillGoalCount[i]=*(char *)(buf+count);
 		count++;

@@ -151,6 +151,8 @@ for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
 #define MAX_NET_CREATE_OBJECTS  40
 
+#define MAX_TEAMS 2
+
 #define MAX_MULTI_MESSAGE_LEN   (4 + 8*MAX_OBSERVERS)
 
 #define NETGAME_ANARCHY         0
@@ -536,12 +538,12 @@ typedef struct netgame_info
 	short						AlwaysLighting;
 	short						ShowEnemyNames;
 	short						BrightPlayers;
-	char						team_name[2][CALLSIGN_LEN+1];
-	signed char						TeamKillGoalCount[2]; 
+	char						team_name[MAX_TEAMS][CALLSIGN_LEN+1];
+	signed char						TeamKillGoalCount[MAX_TEAMS];
 	int						locations[MAX_PLAYERS];
 	short						kills[MAX_PLAYERS][MAX_PLAYERS];
 	ushort						segments_checksum;
-	short						team_kills[2];
+	short						team_kills[MAX_TEAMS];
 	short						killed[MAX_PLAYERS];
 	short						player_kills[MAX_PLAYERS];
 	int						KillGoal;
@@ -579,7 +581,7 @@ typedef struct netgame_info
 	ubyte						AllowCustomModelsTextures;
 	ubyte						ReducedFlash;
 	ubyte						DisableGaussSplash;
-	ubyte						team_color[2];
+	ubyte						team_color[MAX_TEAMS];
 	ubyte						RebalancedWeapons;
 	ubyte						NewSpawnAlgorithm;
 } __pack__ netgame_info;

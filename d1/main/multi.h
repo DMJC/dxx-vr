@@ -132,6 +132,8 @@ for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
 #define MAX_NET_CREATE_OBJECTS 20
 
+#define MAX_TEAMS 2
+
 #define MISSILE_ADJUST 6
 
 #define NETGAME_ANARCHY         0
@@ -476,12 +478,12 @@ typedef struct netgame_info
 	short						AlwaysLighting; // (unused in D1 - cannot destroy lights after all)
 	short						ShowEnemyNames;
 	short						BrightPlayers;
-	char						team_name[2][CALLSIGN_LEN+1];
-	signed char						TeamKillGoalCount[2]; 
+	char						team_name[MAX_TEAMS][CALLSIGN_LEN+1];
+	signed char						TeamKillGoalCount[MAX_TEAMS];
 	int						locations[MAX_PLAYERS];
 	short						kills[MAX_PLAYERS][MAX_PLAYERS];
 	ushort						segments_checksum;
-	short						team_kills[2];
+	short						team_kills[MAX_TEAMS];
 	short						killed[MAX_PLAYERS];
 	short						player_kills[MAX_PLAYERS];
 	int						KillGoal;
