@@ -496,6 +496,14 @@ int vr_openvr_eye_projection(int eye, float *left, float *right, float *bottom, 
 	float t = 0.0f;
 	float b = 0.0f;
 	vr_system->GetProjectionRaw(vr_eye, &l, &r, &t, &b);
+	const float projection_scale = (GameCfg.VRProjectionScale > 0) ? (GameCfg.VRProjectionScale / 100.0f) : 1.0f;
+	if (projection_scale != 1.0f)
+	{
+		l *= projection_scale;
+		r *= projection_scale;
+		t *= projection_scale;
+		b *= projection_scale;
+	}
 	if (left)
 		*left = l;
 	if (right)

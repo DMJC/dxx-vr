@@ -54,6 +54,7 @@ typedef struct Cfg
 	int BorderlessWindow;
 	int VREnabled;
 	int VRHeadTurnsShip;
+	int VRProjectionScale;
 } __pack__ Cfg;
 
 extern struct Cfg GameCfg;
