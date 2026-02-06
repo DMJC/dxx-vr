@@ -2117,8 +2117,14 @@ int listbox_draw(window *wind, listbox *lb)
 
 			if (lb->marquee_maxchars && strlen(lb->item[i]) > lb->marquee_maxchars)
 			{
-				char *shrtstr = d_malloc(lb->marquee_maxchars+1);
+				char stack_buf[2048];
+				char *shrtstr = stack_buf;
 				static int prev_citem = -1;
+
+				if ((lb->marquee_maxchars + 1) > sizeof(stack_buf))
+				{
+					shrtstr = d_malloc(lb->marquee_maxchars + 1);
+				}
 				
 				if (prev_citem != lb->citem)
 				{
@@ -2153,7 +2159,11 @@ int listbox_draw(window *wind, listbox *lb)
 					snprintf(shrtstr, lb->marquee_maxchars, "%s", lb->item[i]);
 				}
 				gr_string( lb->box_x+FSPACX(5), y, shrtstr );
-				d_free(shrtstr);
+
+				if (shrtstr != stack_buf)
+				{
+					d_free(shrtstr);
+				}
 			}
 			else
 			{
