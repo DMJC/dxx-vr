@@ -1296,10 +1296,9 @@ void show_bomb_count(int x,int y,int bg_color,int always_show,int right_align)
 {
 	int bomb,count,w=0,h=0,aw=0;
 	char txt[5],*t;
-#ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int pnum = get_pnum_for_hud();
@@ -1728,12 +1727,11 @@ void hud_show_lives()
 {
 	int x;
 	int top_margin;
-#ifdef USE_OPENVR
 	int offset_x = 0;
 	int offset_y = 0;
 	int cockpit_offset_x = 0;
 	int cockpit_offset_y = 0;
-
+#ifdef USE_OPENVR
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #endif
 	int pnum = get_pnum_for_hud();
@@ -5604,7 +5602,7 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 #ifdef USE_OPENVR
 		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left) + offset_x,HUD_SCALE_Y(box->top)+offset_y,HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
 #else
-		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left,HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
+		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
 #endif
 	}
 
