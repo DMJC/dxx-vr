@@ -513,6 +513,15 @@ void render_countdown_gauge()
 
 void game_draw_hud_stuff()
 {
+#ifdef USE_OPENVR
+	int offset_x = 0;
+	int offset_y = 0;
+	cockpit_gauge_offset(&offset_x, &offset_y);
+#else
+	int offset_x = 0;
+	int offset_y = 0;
+#endif
+
 #ifndef NDEBUG
 	draw_window_label();
 	draw_debug_text();
@@ -521,11 +530,7 @@ void game_draw_hud_stuff()
 #ifdef NETWORK
 	game_draw_multi_message();
 #endif
-#ifdef USE_OPENVR
-        int offset_x = 0;
-        int offset_y = 0;
-        cockpit_gauge_offset(&offset_x, &offset_y);
-#endif
+
 	game_draw_marker_message();
 
 	if ((Newdemo_state == ND_STATE_PLAYBACK) || (Newdemo_state == ND_STATE_RECORDING)) {

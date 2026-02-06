@@ -459,16 +459,49 @@
 #define glVertexPointer dglVertexPointer
 #define glViewport dglViewport
 
+#ifdef glMultiTexCoord2fARB
+#undef glMultiTexCoord2fARB
+#endif
 #define glMultiTexCoord2fARB dglMultiTexCoord2fARB
+
+#ifdef glActiveTextureARB
+#undef glActiveTextureARB
+#endif
 #define glActiveTextureARB dglActiveTextureARB
+
+#ifdef glMultiTexCoord2fSGIS
+#undef glMultiTexCoord2fSGIS
+#endif
 #define glMultiTexCoord2fSGIS dglMultiTexCoord2fSGIS
+
+#ifdef glSelectTextureSGIS
+#undef glSelectTextureSGIS
+#endif
 #define glSelectTextureSGIS dglSelectTextureSGIS
 
+#ifdef glColorTableEXT
+#undef glColorTableEXT
+#endif
 #define glColorTableEXT dglColorTableEXT
 
+#ifdef glCombinerParameteriNV
+#undef glCombinerParameteriNV
+#endif
 #define glCombinerParameteriNV dglCombinerParameteriNV
+
+#ifdef glCombinerInputNV
+#undef glCombinerInputNV
+#endif
 #define glCombinerInputNV dglCombinerInputNV
+
+#ifdef glCombinerOutputNV
+#undef glCombinerOutputNV
+#endif
 #define glCombinerOutputNV dglCombinerOutputNV
+
+#ifdef glFinalCombinerInputNV
+#undef glFinalCombinerInputNV
+#endif
 #define glFinalCombinerInputNV dglFinalCombinerInputNV
 
 #ifdef _WIN32
