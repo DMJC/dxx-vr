@@ -92,6 +92,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef OGL
 #include "ogl_init.h"
+#include "vr_openvr.h"
 #endif
 
 #ifdef EDITOR
@@ -1004,12 +1005,15 @@ int game_handler(window *wind, d_event *event, void *data)
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
-			calc_frame_time();
-			
-			if (!time_paused)
+			if (vr_openvr_current_eye() != 1)
 			{
-				calc_game_time();
-				GameProcessFrame();
+				calc_frame_time();
+				
+				if (!time_paused)
+				{
+					calc_game_time();
+					GameProcessFrame();
+				}
 			}
 
 			if (!Automap_active)		// efficiency hack
