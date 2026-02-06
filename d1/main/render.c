@@ -77,6 +77,11 @@ int Max_linear_depth = 50; // Deepest segment at which linear interpolation will
 int Max_linear_depth_objects = 20;
 int Simple_model_threshhold_scale = 50; // switch to simpler model when the object has depth greater than this value times its radius.
 int Max_debris_objects = 15; // How many debris objects to create
+#ifdef USE_OPENVR
+static vms_matrix vr_last_head_orient;
+static int vr_head_turn_initialized = 0;
+static int vr_head_turn_enabled_prev = 0;
+#endif
 
 //used for checking if points have been rotated
 int	Clear_window_color=-1;
@@ -1430,30 +1435,66 @@ void render_frame(fix eye_offset)
 #ifdef USE_OPENVR
 	if (vr_openvr_active())
 	{
-		vms_vector vr_head_pos;
-		vms_matrix vr_head_orient;
-		if (vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
 		{
-			vms_matrix composed;
+			vms_angvec head_angles;
+			vm_extract_angles_matrix(&head_angles, &head_orient);
+			head_angles.b = -head_angles.b;
+			vm_angles_2_matrix(&head_orient, &head_angles);
+			vms_matrix delta_orient = vmd_identity_matrix;
+			vms_vector head_world;
 			vms_matrix ship_orient = base_orient;
-			vm_matrix_x_matrix(&composed, &base_orient, &vr_head_orient);
-			base_orient = composed;
 			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject && !Rear_view)
 			{
-				Viewer->orient = composed;
-				ship_orient = composed;
-			}
-			{
-				vms_vector head_world;
-				vm_vec_rotate(&head_world, &vr_head_pos, &ship_orient);
-				vm_vec_add2(&Viewer_eye, &head_world);
-				if (Viewer == ConsoleObject)
+				if (!vr_head_turn_initialized)
 				{
-					vm_vec_add2(&Viewer->pos, &head_world);
-					restore_viewer_pos = 1;
+					vr_last_head_orient = head_orient;
+					vr_head_turn_initialized = 1;
 				}
+				else
+				{
+					vms_matrix last_transpose;
+					vm_copy_transpose_matrix(&last_transpose, &vr_last_head_orient);
+					vm_matrix_x_matrix(&delta_orient, &head_orient, &last_transpose);
+				}
+				vr_last_head_orient = head_orient;
+				{
+					vms_matrix ship_updated;
+					vm_matrix_x_matrix(&ship_updated, &ship_orient, &delta_orient);
+					ship_orient = ship_updated;
+					Viewer->orient = ship_orient;
+				}
+				vr_head_turn_enabled_prev = 1;
 			}
+			else
+			{
+				vr_head_turn_initialized = 0;
+				vr_last_head_orient = vmd_identity_matrix;
+				vr_head_turn_enabled_prev = 0;
+			}
+			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
+			vm_vec_add2(&Viewer_eye, &head_world);
+			if (Viewer == ConsoleObject)
+			{
+				vm_vec_add2(&Viewer->pos, &head_world);
+				restore_viewer_pos = 1;
+			}
+			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
 		}
+		else
+		{
+			vr_head_turn_initialized = 0;
+			vr_last_head_orient = vmd_identity_matrix;
+			vr_head_turn_enabled_prev = 0;
+		}
+	}
+	else
+	{
+		vr_head_turn_initialized = 0;
+		vr_last_head_orient = vmd_identity_matrix;
+		vr_head_turn_enabled_prev = 0;
 	}
 #endif
 
