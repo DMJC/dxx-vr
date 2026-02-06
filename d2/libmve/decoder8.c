@@ -68,10 +68,18 @@ static void relFar(int i, int sign, int *x, int *y)
 static void copyFrame(unsigned char *pDest, unsigned char *pSrc)
 {
 	int i;
+	unsigned char *limit = (unsigned char *)g_vBuffers + g_width * g_height * 4;
 
 	for (i=0; i<8; i++)
 	{
-		memcpy(pDest, pSrc, 8);
+		if (pSrc >= (unsigned char *)g_vBuffers && pSrc + 8 <= limit)
+		{
+			memcpy(pDest, pSrc, 8);
+		}
+		else
+		{
+			memset(pDest, 0, 8);
+		}
 		pDest += g_width;
 		pSrc += g_width;
 	}

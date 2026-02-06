@@ -554,7 +554,7 @@ static int create_videobuf_handler(unsigned char major, unsigned char minor, uns
 	/* TODO: * 4 causes crashes on some files */
 	/* only malloc once */
 	if (g_vBuffers == NULL)
-		g_vBackBuf1 = g_vBuffers = mve_alloc(g_width * g_height * 8);
+		g_vBackBuf1 = g_vBuffers = mve_alloc(g_width * g_height * 4);
 	if (truecolor) {
 		g_vBackBuf2 = (unsigned short *)g_vBackBuf1 + (g_width * g_height);
 	} else {
