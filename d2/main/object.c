@@ -1292,8 +1292,10 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 	object *obj;
 
 	// Some consistency checking. FIXME: Add more debug output here to probably trace all possible occurances back.
-	if (segnum < 0 || segnum > Highest_segment_index)
+	if (segnum < 0 || segnum > Highest_segment_index) {
+		con_printf(CON_DEBUG, "obj_create: Bad segnum %d (max=%d) type=%d id=%d\n", segnum, Highest_segment_index, type, id);
 		return -1;
+	}
 
 	Assert(ctype <= CT_CNTRLCEN);
 
