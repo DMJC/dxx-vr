@@ -1417,12 +1417,13 @@ char group_filename[PATH_MAX] = "*.GRP";
 void checkforgrpext( char * f )
 {
 	int i;
+	int len = strlen(f);
 
-	for (i=1; i<strlen(f); i++ )
+	for (i=1; i<len; i++ )
 	{
 		if (f[i]=='.') return;
 
-		if ((f[i]==' '||f[i]==0) )
+		if (f[i]==' ')
 		{
 			f[i]='.';
 			f[i+1]='G';
