@@ -51,6 +51,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "gameseq.h"
 #include "args.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -466,9 +469,22 @@ void update_cockpits();
 //render a frame for the game
 void game_render_frame_mono(int flip)
 {
+	fix eye_offset = 0;
+
+	(void)flip;
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		if (eye >= 0)
+			eye_offset = vr_openvr_eye_offset(eye);
+	}
+#endif
+
 	gr_set_current_canvas(&Screen_3d_window);
 	
-	render_frame(0);
+	render_frame(eye_offset);
 
 	update_cockpits();
 
@@ -623,4 +639,3 @@ void show_boxed_message(char *msg, int RenderFlag)
 	if (!RenderFlag)
 		gr_flip();
 }
-
