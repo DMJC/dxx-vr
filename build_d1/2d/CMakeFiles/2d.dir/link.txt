@@ -1,2 +1,0 @@
-/usr/bin/ar qc lib2d.a CMakeFiles/2d.dir/2dsline.c.o CMakeFiles/2d.dir/bitblt.c.o CMakeFiles/2d.dir/bitmap.c.o CMakeFiles/2d.dir/box.c.o CMakeFiles/2d.dir/canvas.c.o CMakeFiles/2d.dir/circle.c.o CMakeFiles/2d.dir/disc.c.o CMakeFiles/2d.dir/font.c.o CMakeFiles/2d.dir/gpixel.c.o CMakeFiles/2d.dir/line.c.o CMakeFiles/2d.dir/palette.c.o CMakeFiles/2d.dir/pcx.c.o CMakeFiles/2d.dir/pixel.c.o CMakeFiles/2d.dir/rect.c.o CMakeFiles/2d.dir/rle.c.o CMakeFiles/2d.dir/scalec.c.o
-/usr/bin/ranlib lib2d.a

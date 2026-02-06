@@ -1,2 +1,0 @@
-/usr/bin/ar qc libtexmap.a CMakeFiles/texmap.dir/ntmap.c.o CMakeFiles/texmap.dir/scanline.c.o
-/usr/bin/ranlib libtexmap.a

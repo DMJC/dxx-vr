@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmisc.a CMakeFiles/misc.dir/args.c.o CMakeFiles/misc.dir/error.c.o CMakeFiles/misc.dir/hash.c.o CMakeFiles/misc.dir/hmp.c.o CMakeFiles/misc.dir/ignorecase.c.o CMakeFiles/misc.dir/physfsx.c.o CMakeFiles/misc.dir/strio.c.o CMakeFiles/misc.dir/strutil.c.o CMakeFiles/misc.dir/pngfile.c.o
-/usr/bin/ranlib libmisc.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libarch_x11.a CMakeFiles/arch_x11.dir/messagebox.c.o CMakeFiles/arch_x11.dir/x11messagebox.c.o
-/usr/bin/ranlib libarch_x11.a
