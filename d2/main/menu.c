@@ -1335,7 +1335,7 @@ void graphics_config()
 	opt_gr_vr_headturn = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="VR Head Turns Ship"; m[nitems].value = GameCfg.VRHeadTurnsShip; nitems++;
 	opt_gr_vr_world_scale = nitems;
-	m[nitems].type = NM_TYPE_SLIDER; m[nitems].text="VR World Scale"; m[nitems].value = GameCfg.VRWorldScale; m[nitems].min_value = 10; m[nitems].max_value = 400; nitems++;
+	m[nitems].type = NM_TYPE_NUMBER; m[nitems].text="VR World Scale"; m[nitems].value = GameCfg.VRWorldScale; m[nitems].min_value = 10; m[nitems].max_value = 400; nitems++;
 #ifdef OGL
 	m[opt_gr_texfilt+GameCfg.TexFilt].value=1;
 #endif
