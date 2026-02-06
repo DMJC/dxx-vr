@@ -69,6 +69,7 @@ static const char GrabinputStr[] ="GrabInput";
 static const char BorderlessWindowStr[] ="BorderlessWindow";
 static const char VREnabledStr[] ="VREnabled";
 static const char VRHeadTurnsShipStr[] ="VRHeadTurnsShip";
+static const char VRWorldScaleStr[] ="VRWorldScale";
 
 int ReadConfigFile()
 {
@@ -122,6 +123,7 @@ int ReadConfigFile()
 	GameCfg.BorderlessWindow = 0;
 	GameCfg.VREnabled = 0;
 	GameCfg.VRHeadTurnsShip = 0;
+	GameCfg.VRWorldScale = 100;
 
 
 	infile = PHYSFSX_openReadBuffered("descent.cfg");
@@ -243,6 +245,8 @@ int ReadConfigFile()
 				GameCfg.VREnabled = strtol(value, NULL, 10);
 			else if (!strcmp(token, VRHeadTurnsShipStr))
 				GameCfg.VRHeadTurnsShip = strtol(value, NULL, 10);
+			else if (!strcmp(token, VRWorldScaleStr))
+				GameCfg.VRWorldScale = strtol(value, NULL, 10);
 		}
 		d_free(line);
 	}
@@ -251,6 +255,8 @@ int ReadConfigFile()
 
 	if ( GameCfg.DigiVolume > 8 ) GameCfg.DigiVolume = 8;
 	if ( GameCfg.MusicVolume > 8 ) GameCfg.MusicVolume = 8;
+	if (GameCfg.VRWorldScale < 10) GameCfg.VRWorldScale = 10;
+	if (GameCfg.VRWorldScale > 400) GameCfg.VRWorldScale = 400;
 
 	if (GameCfg.ResolutionX >= 320 && GameCfg.ResolutionY >= 200)
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
@@ -304,6 +310,7 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", BorderlessWindowStr, GameCfg.BorderlessWindow);
 	PHYSFSX_printf(infile, "%s=%i\n", VREnabledStr, GameCfg.VREnabled);
 	PHYSFSX_printf(infile, "%s=%i\n", VRHeadTurnsShipStr, GameCfg.VRHeadTurnsShip);
+	PHYSFSX_printf(infile, "%s=%i\n", VRWorldScaleStr, GameCfg.VRWorldScale);
 
 	PHYSFS_close(infile);
 

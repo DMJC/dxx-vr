@@ -1723,6 +1723,8 @@ void render_frame(fix eye_offset, int window_num)
 				vr_head_turn_enabled_prev = 0;
 			}
 			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
+			if (GameCfg.VRWorldScale != 100)
+				vm_vec_scale(&head_world, i2f(GameCfg.VRWorldScale) / 100);
 			vm_vec_add2(&Viewer_eye, &head_world);
 			if (Viewer == get_player_view_object())
 			{

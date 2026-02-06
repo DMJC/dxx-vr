@@ -1249,7 +1249,7 @@ void reticle_config()
 	PlayerCfg.ReticleSize = m[opt_ret_size].value;
 }
 
-int opt_gr_texfilt, opt_gr_movietexfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit, opt_gr_vr, opt_gr_vr_headturn;
+int opt_gr_texfilt, opt_gr_movietexfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit, opt_gr_vr, opt_gr_vr_headturn, opt_gr_vr_world_scale;
 int opt_gr_classicdepth;
 int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 {
@@ -1291,10 +1291,10 @@ int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 void graphics_config()
 {
 #ifdef OGL
-	newmenu_item m[21];
+	newmenu_item m[22];
 	int i = 0;
 #else
-	newmenu_item m[8];
+	newmenu_item m[12];
 #endif
 	int nitems = 0;
 
@@ -1334,6 +1334,8 @@ void graphics_config()
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="Virtual Reality (OpenVR)"; m[nitems].value = GameCfg.VREnabled; nitems++;
 	opt_gr_vr_headturn = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="VR Head Turns Ship"; m[nitems].value = GameCfg.VRHeadTurnsShip; nitems++;
+	opt_gr_vr_world_scale = nitems;
+	m[nitems].type = NM_TYPE_SLIDER; m[nitems].text="VR World Scale"; m[nitems].value = GameCfg.VRWorldScale; m[nitems].min_value = 10; m[nitems].max_value = 400; nitems++;
 #ifdef OGL
 	m[opt_gr_texfilt+GameCfg.TexFilt].value=1;
 #endif
@@ -1367,6 +1369,7 @@ void graphics_config()
 	PlayerCfg.DisableCockpit = m[opt_gr_disablecockpit].value; 
 	GameCfg.VREnabled = m[opt_gr_vr].value;
 	GameCfg.VRHeadTurnsShip = m[opt_gr_vr_headturn].value;
+	GameCfg.VRWorldScale = m[opt_gr_vr_world_scale].value;
 
 	PlayerCfg.maxFps=atoi(framerate_string);
 
