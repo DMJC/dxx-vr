@@ -751,6 +751,86 @@ static inline void hud_bitblt (int x, int y, grs_bitmap *bm)
 #endif
 }
 
+static inline int hud_adjusted_x(int x, const char *s, int offset_x)
+{
+	if (x == 0x8000) {
+		int w = 0;
+		int h = 0;
+		int aw = 0;
+
+		gr_get_string_size(s, &w, &h, &aw);
+		return (grd_curcanv->cv_bitmap.bm_w - w) / 2 + offset_x;
+	}
+
+	return x + offset_x;
+}
+
+static inline void hud_string(int x, int y, const char *s)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_string(hud_adjusted_x(x, s, offset_x), y + offset_y, s);
+}
+
+static void hud_printf(int x, int y, const char *format, ...)
+{
+	char buffer[256];
+	va_list args;
+
+	va_start(args, format);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+
+	hud_string(x, y, buffer);
+}
+
+static inline void hud_rect(int left, int top, int right, int bot)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_rect(left + offset_x, top + offset_y, right + offset_x, bot + offset_y);
+}
+
+static inline void hud_urect(int left, int top, int right, int bot)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_urect(left + offset_x, top + offset_y, right + offset_x, bot + offset_y);
+}
+
+static inline void hud_uline(fix x1, fix y1, fix x2, fix y2)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_uline(x1 + i2f(offset_x), y1 + i2f(offset_y), x2 + i2f(offset_x), y2 + i2f(offset_y));
+}
+
+static inline void hud_disk(fix x, fix y, fix r)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_disk(x + i2f(offset_x), y + i2f(offset_y), r);
+}
+
+static inline void hud_ucircle(fix x, fix y, fix r)
+{
+	int offset_x = 0;
+	int offset_y = 0;
+
+	cockpit_gauge_offset(&offset_x, &offset_y);
+	gr_ucircle(x + i2f(offset_x), y + i2f(offset_y), r);
+}
+
 int get_pnum_for_hud()
 {
 	if (is_observer() && is_observing_player())
@@ -783,7 +863,7 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
+	hud_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
 }
 
 void hud_show_timer_count()
@@ -813,7 +893,7 @@ void hud_show_timer_count()
 		gr_set_fontcolor(Color_0_31_0, -1);
 
 		if (i>-1 && !Control_center_destroyed)
-			gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(12), LINE_SPACING+FSPACY(1), score_str);
+			hud_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(12), LINE_SPACING+FSPACY(1), score_str);
 	}
 #endif
 }
@@ -848,7 +928,7 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
+		hud_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -867,9 +947,9 @@ void sb_show_score()
 	gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
-		gr_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_KILLS);
+		hud_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_KILLS);
 	else
-		gr_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_SCORE);
+		hud_printf(HUD_SCALE_X(SB_SCORE_LABEL_X),HUD_SCALE_Y(SB_SCORE_Y),"%s:", TXT_SCORE);
 
 	gr_set_curfont( GAME_FONT );
 	if ( (Game_mode & GM_MULTI) && !( (Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS) ) )
@@ -883,14 +963,14 @@ void sb_show_score()
 
 	//erase old score
 	gr_setcolor(BM_XRGB(0,0,0));
-	gr_rect(x,y,HUD_SCALE_X(SB_SCORE_RIGHT),y+LINE_SPACING);
+	hud_rect(x,y,HUD_SCALE_X(SB_SCORE_RIGHT),y+LINE_SPACING);
 
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 	else
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
-	gr_string(x,y,score_str);
+	hud_string(x,y,score_str);
 }
 
 void sb_show_score_added()
@@ -927,11 +1007,11 @@ void sb_show_score_added()
 		gr_get_string_size(score_str, &w, &h, &aw );
 		x = HUD_SCALE_X(SB_SCORE_ADDED_RIGHT)-w-FSPACX(1);
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
+		hud_string(x, HUD_SCALE_Y(SB_SCORE_ADDED_Y), score_str);
 	} else {
 		//erase old score
 		gr_setcolor(BM_XRGB(0,0,0));
-		gr_rect(x,HUD_SCALE_Y(SB_SCORE_ADDED_Y),HUD_SCALE_X(SB_SCORE_ADDED_RIGHT),HUD_SCALE_Y(SB_SCORE_ADDED_Y)+LINE_SPACING);
+		hud_rect(x,HUD_SCALE_Y(SB_SCORE_ADDED_Y),HUD_SCALE_X(SB_SCORE_ADDED_RIGHT),HUD_SCALE_Y(SB_SCORE_ADDED_Y)+LINE_SPACING);
 		score_time = 0;
 		score_display = 0;
 	}
@@ -1004,7 +1084,7 @@ void hud_show_homing_warning(void)
 		if (GameTime64 & 0x4000) {
 			gr_set_curfont( GAME_FONT );
 			gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-			gr_string(0x8000, grd_curcanv->cv_bitmap.bm_h-LINE_SPACING,TXT_LOCK);
+			hud_string(0x8000, grd_curcanv->cv_bitmap.bm_h-LINE_SPACING,TXT_LOCK);
 		}
 	}
 }
@@ -1042,9 +1122,9 @@ void hud_show_energy(void)
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 		if (Game_mode & GM_MULTI)
-			 gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+			 hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 		else
-			 gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+			 hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 	}
 
 	if (Newdemo_state==ND_STATE_RECORDING )
@@ -1096,7 +1176,7 @@ void show_bomb_count(int x,int y,int bg_color,int always_show,int right_align)
 	if (right_align)
 		gr_get_string_size(txt, &w, &h, &aw );
 
-	gr_string(x-w,y,txt);
+	hud_string(x-w,y,txt);
 }
 
 void hud_show_weapons_mode(int type,int vertical,int x,int y){
@@ -1143,7 +1223,7 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 				y-=h+FSPACX(2);
 			}else
 				 x-=w+FSPACY(3);
-			gr_string(x, y, weapon_str);
+			hud_string(x, y, weapon_str);
 		}
 	} else {
 		for (i=4;i>=0;i--){
@@ -1161,7 +1241,7 @@ void hud_show_weapons_mode(int type,int vertical,int x,int y){
 				y-=h+FSPACX(2);
 			}else
 				 x-=w+FSPACY(3);
-			gr_string(x, y, weapon_str);
+			hud_string(x, y, weapon_str);
 		}
 	}
 	gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
@@ -1196,9 +1276,9 @@ void hud_show_weapons(void)
 		hud_show_weapons_mode(0,1,x1,y);
 		hud_show_weapons_mode(1,1,x2,y);
 		gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
-		gr_printf(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
+		hud_printf(x2, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].shields));
 		gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
-		gr_printf(x1, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].energy));
+		hud_printf(x1, y-(LINE_SPACING*4),"%i", f2ir(Players[pnum].energy));
 	}
 	else
 	{
@@ -1234,11 +1314,11 @@ void hud_show_weapons(void)
 		}
 
 		gr_get_string_size(disp_primary_weapon_name, &w, &h, &aw );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-(LINE_SPACING*2), disp_primary_weapon_name);//originally y-8
+		hud_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-(LINE_SPACING*2), disp_primary_weapon_name);//originally y-8
 
 		snprintf(weapon_str, sizeof(weapon_str), "%s %d",SECONDARY_WEAPON_NAMES_VERY_SHORT(Players[pnum].secondary_weapon),Players[pnum].secondary_ammo[Players[pnum].secondary_weapon]);
 		gr_get_string_size(weapon_str, &w, &h, &aw );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-LINE_SPACING, weapon_str);
+		hud_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-LINE_SPACING, weapon_str);
 
 		show_bomb_count(grd_curcanv->cv_bitmap.bm_w-FSPACX(1), y-(LINE_SPACING*3),-1,1, 1);
 	}
@@ -1267,7 +1347,7 @@ void hud_show_cloak_invuln(void)
 
 		if (Players[pnum].cloak_time+CLOAK_TIME_MAX-GameTime64 > F1_0*3 || GameTime64 & 0x8000)
 		{
-			gr_printf(FSPACX(1), y, "%s", TXT_CLOAKED);
+			hud_printf(FSPACX(1), y, "%s", TXT_CLOAKED);
 		}
 	}
 
@@ -1282,7 +1362,7 @@ void hud_show_cloak_invuln(void)
 
 			if (Players[pnum].invulnerable_time+INVULNERABLE_TIME_MAX-GameTime64 > F1_0*4 || GameTime64 & 0x8000)
 			{
-				gr_printf(FSPACX(1), y, "%s", TXT_INVULNERABLE);
+				hud_printf(FSPACX(1), y, "%s", TXT_INVULNERABLE);
 			}
 		}
 	}
@@ -1297,14 +1377,14 @@ void hud_show_shield(void)
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 		if ( Players[pnum].shields >= 0 )	{
 			if (Game_mode & GM_MULTI)
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+				hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 			else
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+				hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 		} else {
 			if (Game_mode & GM_MULTI)
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
+				hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
 			else
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
+				hud_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
 		}
 	}
 
@@ -1330,7 +1410,7 @@ void hud_show_lives()
 	if (Game_mode & GM_MULTI) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-		gr_printf(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
+		hud_printf(x, FSPACY(1), "%s: %d", TXT_DEATHS, Players[pnum].net_killed_total);
 	}
 	else if (Players[pnum].lives > 1)  {
 		grs_bitmap *bm;
@@ -1339,7 +1419,7 @@ void hud_show_lives()
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 		hud_bitblt_free(x,FSPACY(1),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
+		hud_printf(HUD_SCALE_X_AR(bm->bm_w)+x, FSPACY(1), " x %d", Players[pnum].lives-1);
 	}
 }
 
@@ -1356,9 +1436,9 @@ void sb_show_lives()
 	gr_set_curfont( GAME_FONT );
 	gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 	if (Game_mode & GM_MULTI)
-		gr_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_DEATHS);
+		hud_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_DEATHS);
 	else
-		gr_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_LIVES);
+		hud_printf(HUD_SCALE_X(SB_LIVES_LABEL_X),HUD_SCALE_Y(y),"%s:", TXT_LIVES);
 
 	if (Game_mode & GM_MULTI)
 	{
@@ -1370,24 +1450,24 @@ void sb_show_lives()
 		sprintf(killed_str, "%5d", Players[pnum].net_killed_total);
 		gr_get_string_size(killed_str, &w, &h, &aw);
 		gr_setcolor(BM_XRGB(0,0,0));
-		gr_rect(last_x[HIRESMODE], HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y)+LINE_SPACING);
+		hud_rect(last_x[HIRESMODE], HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y)+LINE_SPACING);
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1);
 		x = HUD_SCALE_X(SB_SCORE_RIGHT)-w-FSPACX(1);
-		gr_string(x, HUD_SCALE_Y(y), killed_str);
+		hud_string(x, HUD_SCALE_Y(y), killed_str);
 		last_x[HIRESMODE] = x;
 		return;
 	}
 
 	//erase old icons
 	gr_setcolor(BM_XRGB(0,0,0));
-	gr_rect(HUD_SCALE_X(x), HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y+bm->bm_h));
+	hud_rect(HUD_SCALE_X(x), HUD_SCALE_Y(y), HUD_SCALE_X(SB_SCORE_RIGHT), HUD_SCALE_Y(y+bm->bm_h));
 
 	if (Players[pnum].lives-1 > 0) {
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 		PIGGY_PAGE_IN(Gauges[GAUGE_LIVES]);
 		hud_bitblt_free(HUD_SCALE_X(x),HUD_SCALE_Y(y),HUD_SCALE_X_AR(bm->bm_w),HUD_SCALE_Y_AR(bm->bm_h),bm);
-		gr_printf(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y(y), " x %d", Players[pnum].lives-1);
+		hud_printf(HUD_SCALE_X(x)+HUD_SCALE_X_AR(bm->bm_w), HUD_SCALE_Y(y), " x %d", Players[pnum].lives-1);
 	}
 }
 
@@ -1406,7 +1486,7 @@ void show_time()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1 );
 
-	gr_printf(SWIDTH-FSPACX(30),GHEIGHT-(LINE_SPACING*11),"%d:%02d", mins, secs);
+	hud_printf(SWIDTH-FSPACX(30),GHEIGHT-(LINE_SPACING*11),"%d:%02d", mins, secs);
 }
 #endif
 
@@ -1602,7 +1682,7 @@ void draw_energy_bar(int energy)
 			if (x2 > HUD_SCALE_X(LEFT_ENERGY_GAUGE_W) - (y*aplitscale)/3)
 				x2 = HUD_SCALE_X(LEFT_ENERGY_GAUGE_W) - (y*aplitscale)/3;
 
-			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)) );
+			if (x2 > x1) hud_uline( i2f(x1+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(LEFT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(LEFT_ENERGY_GAUGE_Y)) );
 		}
 
 	gr_set_current_canvas( NULL );
@@ -1619,7 +1699,7 @@ void draw_energy_bar(int energy)
 			if (x1 < (y*aplitscale)/3)
 				x1 = (y*aplitscale)/3;
 
-			if (x2 > x1) gr_uline( i2f(x1+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)) );
+			if (x2 > x1) hud_uline( i2f(x1+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)), i2f(x2+HUD_SCALE_X(RIGHT_ENERGY_GAUGE_X)), i2f(y+HUD_SCALE_Y(RIGHT_ENERGY_GAUGE_Y)) );
 		}
 
 	gr_set_current_canvas( NULL );
@@ -1705,7 +1785,7 @@ void draw_player_ship(int cloak_state,int x, int y)
 	gr_set_current_canvas(NULL);
 	hud_bitblt( HUD_SCALE_X(x), HUD_SCALE_Y(y), bm);
 	gr_settransblend(cloak_fade_value, GR_BLEND_NORMAL);
-	gr_rect(HUD_SCALE_X(x-3), HUD_SCALE_Y(y-3), HUD_SCALE_X(x+bm->bm_w+3), HUD_SCALE_Y(y+bm->bm_h+3));
+	hud_rect(HUD_SCALE_X(x-3), HUD_SCALE_Y(y-3), HUD_SCALE_X(x+bm->bm_w+3), HUD_SCALE_Y(y+bm->bm_h+3));
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 	gr_set_current_canvas( NULL );
 }
@@ -1725,12 +1805,12 @@ void draw_numerical_display(int shield, int energy)
 	// gr_get_string_size is used so we can get the numbers finally in the correct position with sw and ew
 	gr_set_fontcolor(BM_XRGB(14,14,23),-1 );
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(sw/2),
+	hud_printf(	(grd_curscreen->sc_w/1.951)-(sw/2),
 			(grd_curscreen->sc_h/1.365),"%d",shield);
 
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
-	gr_printf(	(grd_curscreen->sc_w/1.951)-(ew/2),
+	hud_printf(	(grd_curscreen->sc_w/1.951)-(ew/2),
 			(grd_curscreen->sc_h/1.5),"%d",energy);
 
 	gr_set_current_canvas( NULL );
@@ -1777,7 +1857,7 @@ void draw_weapon_info_sub(int info_index,gauge_box *box,int pic_x,int pic_y,char
 
 	//clear the window
 	gr_setcolor(BM_XRGB(0,0,0));
-	gr_rect(HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right),HUD_SCALE_Y(box->bot+1));
+	hud_rect(HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right),HUD_SCALE_Y(box->bot+1));
 
 	bm=&GameBitmaps[Weapon_info[info_index].picture.index];
 	Assert(bm != NULL);
@@ -1789,14 +1869,14 @@ void draw_weapon_info_sub(int info_index,gauge_box *box,int pic_x,int pic_y,char
 	{
 		gr_set_fontcolor(BM_XRGB(0,20,0),-1 );
 
-		gr_string(text_x,text_y,name);
+		hud_string(text_x,text_y,name);
 
 		//	For laser, show level and quadness
 		if (info_index == LASER_INDEX)
 		{
-			gr_printf(text_x,text_y+LINE_SPACING, "%s: %i", TXT_LVL, Players[pnum].laser_level+1);
+			hud_printf(text_x,text_y+LINE_SPACING, "%s: %i", TXT_LVL, Players[pnum].laser_level+1);
 			if (Players[pnum].flags & PLAYER_FLAGS_QUAD_LASERS)
-				gr_string(text_x,text_y+(LINE_SPACING*2), TXT_QUAD);
+				hud_string(text_x,text_y+(LINE_SPACING*2), TXT_QUAD);
 		}
 	}
 }
@@ -1853,7 +1933,7 @@ void draw_ammo_info(int x,int y,int ammo_count,int primary)
 	{
 		gr_setcolor(BM_XRGB(0,0,0));
 		gr_set_fontcolor(BM_XRGB(20,0,0),-1 );
-		gr_printf(x,y,"%03d",ammo_count);
+		hud_printf(x,y,"%03d",ammo_count);
 	}
 }
 
@@ -1932,7 +2012,7 @@ void draw_weapon_box(int weapon_type,int weapon_num)
 		int boxofs = (PlayerCfg.CurrentCockpitMode==CM_STATUS_BAR)?SB_PRIMARY_BOX:COCKPIT_PRIMARY_BOX;
 
 		gr_settransblend(fade_value, GR_BLEND_NORMAL);
-		gr_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top),HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot));
+		hud_rect(HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].left),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].top),HUD_SCALE_X(gauge_boxes[boxofs+weapon_type].right),HUD_SCALE_Y(gauge_boxes[boxofs+weapon_type].bot));
 
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 	}
@@ -1982,7 +2062,7 @@ void sb_draw_energy_bar(int energy)
 
 	if (erase_height > 0) {
 		gr_setcolor( 0 );
-		gr_urect(HUD_SCALE_X(SB_ENERGY_GAUGE_X), HUD_SCALE_Y(SB_ENERGY_GAUGE_Y), HUD_SCALE_X(SB_ENERGY_GAUGE_X) + HUD_SCALE_X(SB_ENERGY_GAUGE_W) - 1, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + erase_height - 1);
+		hud_urect(HUD_SCALE_X(SB_ENERGY_GAUGE_X), HUD_SCALE_Y(SB_ENERGY_GAUGE_Y), HUD_SCALE_X(SB_ENERGY_GAUGE_X) + HUD_SCALE_X(SB_ENERGY_GAUGE_W) - 1, HUD_SCALE_Y(SB_ENERGY_GAUGE_Y) + erase_height - 1);
 	}
 
 	gr_set_current_canvas( NULL );
@@ -1990,7 +2070,7 @@ void sb_draw_energy_bar(int energy)
 	//draw numbers
 	gr_set_fontcolor(BM_XRGB(25,18,6),-1 );
 	gr_get_string_size((energy>199)?"200":(energy>99)?"100":(energy>9)?"00":"0",&ew,&eh,&eaw);
-	gr_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_NUM_Y),"%d",energy);
+	hud_printf((grd_curscreen->sc_w/3)-(ew/2),HUD_SCALE_Y(SB_ENERGY_NUM_Y),"%d",energy);
 }
 
 void sb_draw_shield_num(int shield)
@@ -2006,7 +2086,7 @@ void sb_draw_shield_num(int shield)
 	PIGGY_PAGE_IN( cockpit_bitmap[PlayerCfg.CurrentCockpitMode] );
 	gr_setcolor(gr_gpixel(bm,SB_SHIELD_NUM_X,SB_SHIELD_NUM_Y-(SM_H(Game_screen_mode)-bm->bm_h)));
 	gr_get_string_size((shield>199)?"200":(shield>99)?"100":(shield>9)?"00":"0",&sw,&sh,&saw);
-	gr_printf((grd_curscreen->sc_w/2.267)-(sw/2),HUD_SCALE_Y(SB_SHIELD_NUM_Y),"%d",shield);
+	hud_printf((grd_curscreen->sc_w/2.267)-(sw/2),HUD_SCALE_Y(SB_SHIELD_NUM_Y),"%d",shield);
 }
 
 void sb_draw_shield_bar(int shield)
@@ -2191,69 +2271,69 @@ void show_reticle(int reticle_type, int secondary_display)
 
 		}
 		case RET_TYPE_X:
-			gr_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5))); // top-left
-			gr_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5))); // top-right
-			gr_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5))); // bottom-left
-			gr_uline(i2f(x+(size/2)), i2f(y+(size/2)), i2f(x+(size/5)), i2f(y+(size/5))); // bottom-right
+			hud_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5))); // top-left
+			hud_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5))); // top-right
+			hud_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5))); // bottom-left
+			hud_uline(i2f(x+(size/2)), i2f(y+(size/2)), i2f(x+(size/5)), i2f(y+(size/5))); // bottom-right
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x+(size/2)), i2f(y+(size/2)+(size/5)), i2f(x+(size/5)), i2f(y+(size/5)+(size/5)));
+				hud_uline(i2f(x+(size/2)), i2f(y+(size/2)+(size/5)), i2f(x+(size/5)), i2f(y+(size/5)+(size/5)));
 			break;
 		case RET_TYPE_DOT:
-			gr_disk(i2f(x),i2f(y),i2f(size/5));
+			hud_disk(i2f(x),i2f(y),i2f(size/5));
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
+				hud_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
 			break;
 		case RET_TYPE_CIRCLE:
 			// Hack!  Something is going wrong in OGL-land with these numbers (???)
 			if(size == 33 && x == 960 && y == 540) { size = 24; }
 
-			gr_ucircle(i2f(x),i2f(y),i2f(size/4));
+			hud_ucircle(i2f(x),i2f(y),i2f(size/4));
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)-(size/5)), i2f(y-(size/2)), i2f(x-(size/5)-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)+(size/5)), i2f(y-(size/2)), i2f(x+(size/5)+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
+				hud_uline(i2f(x), i2f(y+(size/2)+(size/5)), i2f(x), i2f(y+(size/5)+(size/5)));
 			break;
 		case RET_TYPE_CROSS_V1:
-			gr_uline(i2f(x),i2f(y-(size/2)),i2f(x),i2f(y+(size/2)+1)); // horiz
-			gr_uline(i2f(x-(size/2)),i2f(y),i2f(x+(size/2)+1),i2f(y)); // vert
+			hud_uline(i2f(x),i2f(y-(size/2)),i2f(x),i2f(y+(size/2)+1)); // horiz
+			hud_uline(i2f(x-(size/2)),i2f(y),i2f(x+(size/2)+1),i2f(y)); // vert
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
 			break;
 		case RET_TYPE_CROSS_V2:
-			gr_uline(i2f(x), i2f(y-(size/2)), i2f(x), i2f(y-(size/6))); // vert-top
-			gr_uline(i2f(x), i2f(y+(size/2)), i2f(x), i2f(y+(size/6))); // vert-bottom
-			gr_uline(i2f(x-(size/2)), i2f(y), i2f(x-(size/6)), i2f(y)); // horiz-left
-			gr_uline(i2f(x+(size/2)), i2f(y), i2f(x+(size/6)), i2f(y)); // horiz-right
+			hud_uline(i2f(x), i2f(y-(size/2)), i2f(x), i2f(y-(size/6))); // vert-top
+			hud_uline(i2f(x), i2f(y+(size/2)), i2f(x), i2f(y+(size/6))); // vert-bottom
+			hud_uline(i2f(x-(size/2)), i2f(y), i2f(x-(size/6)), i2f(y)); // horiz-left
+			hud_uline(i2f(x+(size/2)), i2f(y), i2f(x+(size/6)), i2f(y)); // horiz-right
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
 			break;
 		case RET_TYPE_ANGLE:
-			gr_uline(i2f(x),i2f(y),i2f(x),i2f(y+(size/2))); // vert
-			gr_uline(i2f(x),i2f(y),i2f(x+(size/2)),i2f(y)); // horiz
+			hud_uline(i2f(x),i2f(y),i2f(x),i2f(y+(size/2))); // vert
+			hud_uline(i2f(x),i2f(y),i2f(x+(size/2)),i2f(y)); // horiz
 			if (secondary_display && secondary_bm_num == 1)
-				gr_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y-(size/2)), i2f(x-(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 2)
-				gr_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
+				hud_uline(i2f(x+(size/2)), i2f(y-(size/2)), i2f(x+(size/5)), i2f(y-(size/5)));
 			else if (secondary_display && secondary_bm_num == 4)
-				gr_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
+				hud_uline(i2f(x-(size/2)), i2f(y+(size/2)), i2f(x-(size/5)), i2f(y+(size/5)));
 			break;
 		case RET_TYPE_NONE:
 			break;
@@ -2269,11 +2349,11 @@ void show_mousefs_indicator(int mx, int my, int mz, int x, int y, int size)
 
 	gr_setcolor(BM_XRGB(PlayerCfg.ReticleRGBA[0],PlayerCfg.ReticleRGBA[1],PlayerCfg.ReticleRGBA[2]));
 	gr_settransblend(PlayerCfg.ReticleRGBA[3], GR_BLEND_NORMAL);
-	gr_uline(i2f(xaxpos), i2f(y-(size/2)), i2f(xaxpos), i2f(y-(size/4)));
-	gr_uline(i2f(xaxpos), i2f(y+(size/2)), i2f(xaxpos), i2f(y+(size/4)));
-	gr_uline(i2f(x-(size/2)), i2f(yaxpos), i2f(x-(size/4)), i2f(yaxpos));
-	gr_uline(i2f(x+(size/2)), i2f(yaxpos), i2f(x+(size/4)), i2f(yaxpos));
-	gr_uline(i2f(x+(size/2)+HUD_SCALE_X_AR(2)), i2f(y), i2f(x+(size/2)+HUD_SCALE_X_AR(2)), i2f(zaxpos));
+	hud_uline(i2f(xaxpos), i2f(y-(size/2)), i2f(xaxpos), i2f(y-(size/4)));
+	hud_uline(i2f(xaxpos), i2f(y+(size/2)), i2f(xaxpos), i2f(y+(size/4)));
+	hud_uline(i2f(x-(size/2)), i2f(yaxpos), i2f(x-(size/4)), i2f(yaxpos));
+	hud_uline(i2f(x+(size/2)), i2f(yaxpos), i2f(x+(size/4)), i2f(yaxpos));
+	hud_uline(i2f(x+(size/2)+HUD_SCALE_X_AR(2)), i2f(y), i2f(x+(size/2)+HUD_SCALE_X_AR(2)), i2f(zaxpos));
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 }
 
@@ -4296,7 +4376,7 @@ void draw_hud()
 					y -= LINE_SPACING * 2;
 			}
 
-			gr_printf( x, y, "%s %2d%%", TXT_CRUISE, f2i(Cruise_speed) );
+			hud_printf( x, y, "%s %2d%%", TXT_CRUISE, f2i(Cruise_speed) );
 		}
 	}
 
@@ -4375,7 +4455,7 @@ void draw_hud()
 		HUD_render_message_frame();
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-		gr_string(0x8000,GHEIGHT-LINE_SPACING,TXT_REAR_VIEW);
+		hud_string(0x8000,GHEIGHT-LINE_SPACING,TXT_REAR_VIEW);
 	}
 
 }
