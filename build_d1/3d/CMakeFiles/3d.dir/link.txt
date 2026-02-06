@@ -1,0 +1,2 @@
+/usr/bin/ar qc lib3d.a CMakeFiles/3d.dir/clipper.c.o CMakeFiles/3d.dir/draw.c.o CMakeFiles/3d.dir/globvars.c.o CMakeFiles/3d.dir/instance.c.o CMakeFiles/3d.dir/interp.c.o CMakeFiles/3d.dir/matrix.c.o CMakeFiles/3d.dir/points.c.o CMakeFiles/3d.dir/rod.c.o CMakeFiles/3d.dir/setup.c.o
+/usr/bin/ranlib lib3d.a

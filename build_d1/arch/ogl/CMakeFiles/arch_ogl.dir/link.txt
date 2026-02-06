@@ -1,0 +1,2 @@
+/usr/bin/ar qc libarch_ogl.a CMakeFiles/arch_ogl.dir/gr.c.o CMakeFiles/arch_ogl.dir/ogl.c.o CMakeFiles/arch_ogl.dir/oglprog.c.o
+/usr/bin/ranlib libarch_ogl.a

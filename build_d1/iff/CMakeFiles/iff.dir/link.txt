@@ -1,0 +1,2 @@
+/usr/bin/ar qc libiff.a CMakeFiles/iff.dir/iff.c.o
+/usr/bin/ranlib libiff.a

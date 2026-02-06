@@ -1,0 +1,2 @@
+/usr/bin/ar qc libxmodel.a CMakeFiles/xmodel.dir/aseread.cpp.o CMakeFiles/xmodel.dir/submodel.cpp.o CMakeFiles/xmodel.dir/tga.cpp.o CMakeFiles/xmodel.dir/xmodel.cpp.o
+/usr/bin/ranlib libxmodel.a

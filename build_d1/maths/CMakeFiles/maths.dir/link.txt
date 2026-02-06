@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmaths.a CMakeFiles/maths.dir/fixc.c.o CMakeFiles/maths.dir/rand.c.o CMakeFiles/maths.dir/tables.c.o CMakeFiles/maths.dir/vecmat.c.o
+/usr/bin/ranlib libmaths.a
