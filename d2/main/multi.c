@@ -1703,7 +1703,7 @@ multi_message_feedback(void)
 		}
 		if (Game_mode & GM_TEAM)
 		{
-			for (i = 0; i < N_players; i++)
+			for (i = 0; i < 2; i++)
 			{
 				if (!d_strnicmp(Netgame.team_name[i], Network_message, colon-Network_message))
 				{
