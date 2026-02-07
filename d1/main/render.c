@@ -1456,21 +1456,29 @@ void render_frame(fix eye_offset)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,
+		{
+			const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
+			const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
+			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
+				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
+				&Viewer->orient,
 #endif
-			fixdiv(Render_zoom,Zoom_factor));
+				fixdiv(render_zoom,Zoom_factor));
+		}
 #else
-		g3_set_view_matrix(&Viewer_eye,
+		{
+			const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
+			const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
+			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
+				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
+				&Viewer->orient,
 #endif
-			Render_zoom);
+				render_zoom);
+		}
 #endif
 	}
 

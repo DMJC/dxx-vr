@@ -1750,9 +1750,17 @@ void render_frame(fix eye_offset, int window_num)
 	}
 
 #ifdef JOHN_ZOOM
-	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
+	{
+		const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
+		const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
+		g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(render_zoom, Zoom_factor));
+	}
 #else
-	g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
+	{
+		const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
+		const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
+		g3_set_view_matrix(&Viewer_eye, &base_orient, render_zoom);
+	}
 #endif
 
 	if (Clear_window == 1) {
