@@ -38,6 +38,8 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL=OFF
           cmake --build build
           sudo cmake --install build
+          cd ..
+          rm -rf openvr.zip openvr-2.12.14
 
       - name: Configure D1
         run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
