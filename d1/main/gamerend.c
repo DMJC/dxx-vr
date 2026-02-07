@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "timer.h"
 #include "pstypes.h"
 #include "console.h"
@@ -569,6 +570,7 @@ void update_cockpits()
 {
 	int cockpit_offset_x = 0;
 	int cockpit_offset_y = 0;
+	const float hud_scale = hud_get_scale_factor();
 
 	cockpit_gauge_offset(&cockpit_offset_x, &cockpit_offset_y);
 
@@ -585,30 +587,78 @@ void update_cockpits()
 		switch( PlayerCfg.CurrentCockpitMode )	{
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
-	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
-	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
-	#endif
+			{
+				const int base_w = grd_curcanv->cv_bitmap.bm_w;
+				const int base_h = grd_curcanv->cv_bitmap.bm_h;
+				const int scaled_w = max(1, (int)lroundf(base_w * hud_scale));
+				const int scaled_h = max(1, (int)lroundf(base_h * hud_scale));
+				const int scaled_x = hud_scale_screen_x(0) + cockpit_offset_x;
+				const int scaled_y = hud_scale_screen_y(0) + cockpit_offset_y;
+#ifdef OGL
+				ogl_ubitmapm_cs (scaled_x, scaled_y, scaled_w, scaled_h, bm,255, F1_0);
+#else
+				grs_point vertbuf[3] = {
+					{ i2f(scaled_x), i2f(scaled_y) },
+					{ 0, 0 },
+					{ i2f(scaled_x + scaled_w), i2f(scaled_y + scaled_h) }
+				};
+				scale_bitmap(bm, vertbuf, 0);
+#endif
+			}
 				break;
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
-	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
-	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
-	#endif
+			{
+				const int base_w = grd_curcanv->cv_bitmap.bm_w;
+				const int base_h = grd_curcanv->cv_bitmap.bm_h;
+				const int scaled_w = max(1, (int)lroundf(base_w * hud_scale));
+				const int scaled_h = max(1, (int)lroundf(base_h * hud_scale));
+				const int scaled_x = hud_scale_screen_x(0) + cockpit_offset_x;
+				const int scaled_y = hud_scale_screen_y(0) + cockpit_offset_y;
+#ifdef OGL
+				ogl_ubitmapm_cs (scaled_x, scaled_y, scaled_w, scaled_h, bm,255, F1_0);
+#else
+				grs_point vertbuf[3] = {
+					{ i2f(scaled_x), i2f(scaled_y) },
+					{ 0, 0 },
+					{ i2f(scaled_x + scaled_w), i2f(scaled_y + scaled_h) }
+				};
+				scale_bitmap(bm, vertbuf, 0);
+#endif
+			}
 				break;
 			case CM_FULL_SCREEN:
 				// Do not draw cockpit.
 				break;
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
-	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y + (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
-	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y + SHEIGHT-bm->bm_h,bm);
-	#endif
+			{
+#ifdef OGL
+				const int base_w = bm->bm_w;
+				const int base_h = (int)((double)(bm->bm_h) * (HIRESMODE ? (double)SHEIGHT / 480 : (double)SHEIGHT / 200) + 0.5);
+				const int base_x = 0;
+				const int base_y = (HIRESMODE ? (SHEIGHT * 2) / 2.6 : (SHEIGHT * 2) / 2.72);
+#else
+				const int base_w = bm->bm_w;
+				const int base_h = bm->bm_h;
+				const int base_x = 0;
+				const int base_y = SHEIGHT - bm->bm_h;
+#endif
+				const int scaled_w = max(1, (int)lroundf(base_w * hud_scale));
+				const int scaled_h = max(1, (int)lroundf(base_h * hud_scale));
+				const int scaled_x = hud_scale_screen_x(base_x) + cockpit_offset_x;
+				const int scaled_y = hud_scale_screen_y(base_y) + cockpit_offset_y;
+#ifdef OGL
+				ogl_ubitmapm_cs (scaled_x, scaled_y, scaled_w, scaled_h, bm,255, F1_0);
+#else
+				grs_point vertbuf[3] = {
+					{ i2f(scaled_x), i2f(scaled_y) },
+					{ 0, 0 },
+					{ i2f(scaled_x + scaled_w), i2f(scaled_y + scaled_h) }
+				};
+				scale_bitmap(bm, vertbuf, 0);
+#endif
+			}
 				break;
 			case CM_LETTERBOX:
 				gr_set_current_canvas(NULL);

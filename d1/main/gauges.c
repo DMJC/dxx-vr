@@ -729,40 +729,88 @@ span weapon_window_right_hires[] = {
 
 static inline void hud_bitblt_free (int x, int y, int w, int h, grs_bitmap *bm)
 {
+	const float scale = hud_get_scale_factor();
 	int offset_x = 0;
 	int offset_y = 0;
+	int scaled_x = hud_scale_screen_x(x);
+	int scaled_y = hud_scale_screen_y(y);
+	int scaled_w = max(1, (int)lroundf(w * scale));
+	int scaled_h = max(1, (int)lroundf(h * scale));
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #ifdef OGL
-	ogl_ubitmapm_cs (x + offset_x, y + offset_y, w, h, bm, -1, F1_0);
+	ogl_ubitmapm_cs (scaled_x + offset_x, scaled_y + offset_y, scaled_w, scaled_h, bm, -1, F1_0);
 #else
-	gr_ubitmapm(x + offset_x, y + offset_y, bm);
+	grs_point vertbuf[3] = {
+		{ i2f(scaled_x + offset_x), i2f(scaled_y + offset_y) },
+		{ 0, 0 },
+		{ i2f(scaled_x + offset_x + scaled_w), i2f(scaled_y + offset_y + scaled_h) }
+	};
+
+	scale_bitmap(bm, vertbuf, 0);
 #endif
 }
 
 static inline void hud_bitblt (int x, int y, grs_bitmap *bm)
 {
+	const float scale = hud_get_scale_factor();
 	int offset_x = 0;
 	int offset_y = 0;
+	int scaled_x = hud_scale_screen_x(x);
+	int scaled_y = hud_scale_screen_y(y);
+	int scaled_w = max(1, (int)lroundf(HUD_SCALE_X(bm->bm_w) * scale));
+	int scaled_h = max(1, (int)lroundf(HUD_SCALE_Y(bm->bm_h) * scale));
 	cockpit_gauge_offset(&offset_x, &offset_y);
 #ifdef OGL
-	ogl_ubitmapm_cs (x + offset_x, y + offset_y, HUD_SCALE_X (bm->bm_w), HUD_SCALE_Y (bm->bm_h), bm, -1, F1_0);
+	ogl_ubitmapm_cs (scaled_x + offset_x, scaled_y + offset_y, scaled_w, scaled_h, bm, -1, F1_0);
 #else
-	gr_ubitmapm(x + offset_x, y + offset_y, bm);
+	grs_point vertbuf[3] = {
+		{ i2f(scaled_x + offset_x), i2f(scaled_y + offset_y) },
+		{ 0, 0 },
+		{ i2f(scaled_x + offset_x + scaled_w), i2f(scaled_y + offset_y + scaled_h) }
+	};
+
+	scale_bitmap(bm, vertbuf, 0);
 #endif
 }
 
-static inline int hud_adjusted_x(int x, const char *s, int offset_x)
+float hud_get_scale_factor(void)
+{
+	return 0.65f;
+}
+
+int hud_scale_screen_x(int x)
+{
+	const float scale = hud_get_scale_factor();
+	const float center = grd_curcanv->cv_bitmap.bm_w * 0.5f;
+
+	return (int)lroundf((x - center) * scale + center);
+}
+
+int hud_scale_screen_y(int y)
+{
+	const float scale = hud_get_scale_factor();
+	const float center = grd_curcanv->cv_bitmap.bm_h * 0.5f;
+
+	return (int)lroundf((y - center) * scale + center);
+}
+
+int hud_scale_text_x(int x, const char *s)
 {
 	if (x == 0x8000) {
 		int w = 0;
 		int h = 0;
 		int aw = 0;
+		const float scale = hud_get_scale_factor();
+		int unscaled_x = 0;
 
 		gr_get_string_size(s, &w, &h, &aw);
-		return (grd_curcanv->cv_bitmap.bm_w - w) / 2 + offset_x;
+		(void)h;
+		(void)aw;
+		unscaled_x = (grd_curcanv->cv_bitmap.bm_w - (int)lroundf(w / scale)) / 2;
+		return hud_scale_screen_x(unscaled_x);
 	}
 
-	return x + offset_x;
+	return hud_scale_screen_x(x);
 }
 
 static inline void hud_string(int x, int y, const char *s)
@@ -771,7 +819,7 @@ static inline void hud_string(int x, int y, const char *s)
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_string(hud_adjusted_x(x, s, offset_x), y + offset_y, s);
+	gr_string(hud_scale_text_x(x, s) + offset_x, hud_scale_screen_y(y) + offset_y, s);
 }
 
 static void hud_printf(int x, int y, const char *format, ...)
@@ -792,7 +840,8 @@ static inline void hud_rect(int left, int top, int right, int bot)
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_rect(left + offset_x, top + offset_y, right + offset_x, bot + offset_y);
+	gr_rect(hud_scale_screen_x(left) + offset_x, hud_scale_screen_y(top) + offset_y,
+		hud_scale_screen_x(right) + offset_x, hud_scale_screen_y(bot) + offset_y);
 }
 
 static inline void hud_urect(int left, int top, int right, int bot)
@@ -801,35 +850,62 @@ static inline void hud_urect(int left, int top, int right, int bot)
 	int offset_y = 0;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_urect(left + offset_x, top + offset_y, right + offset_x, bot + offset_y);
+	gr_urect(hud_scale_screen_x(left) + offset_x, hud_scale_screen_y(top) + offset_y,
+		hud_scale_screen_x(right) + offset_x, hud_scale_screen_y(bot) + offset_y);
 }
 
 static inline void hud_uline(fix x1, fix y1, fix x2, fix y2)
 {
+	const fix scale = fl2f(hud_get_scale_factor());
+	const fix center_x = i2f(grd_curcanv->cv_bitmap.bm_w / 2);
+	const fix center_y = i2f(grd_curcanv->cv_bitmap.bm_h / 2);
 	int offset_x = 0;
 	int offset_y = 0;
+	fix scaled_x1 = fixmul(x1 - center_x, scale) + center_x;
+	fix scaled_y1 = fixmul(y1 - center_y, scale) + center_y;
+	fix scaled_x2 = fixmul(x2 - center_x, scale) + center_x;
+	fix scaled_y2 = fixmul(y2 - center_y, scale) + center_y;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_uline(x1 + i2f(offset_x), y1 + i2f(offset_y), x2 + i2f(offset_x), y2 + i2f(offset_y));
+	gr_uline(scaled_x1 + i2f(offset_x), scaled_y1 + i2f(offset_y),
+		scaled_x2 + i2f(offset_x), scaled_y2 + i2f(offset_y));
 }
 
 static inline void hud_disk(fix x, fix y, fix r)
 {
+	const fix scale = fl2f(hud_get_scale_factor());
+	const fix center_x = i2f(grd_curcanv->cv_bitmap.bm_w / 2);
+	const fix center_y = i2f(grd_curcanv->cv_bitmap.bm_h / 2);
 	int offset_x = 0;
 	int offset_y = 0;
+	fix scaled_x = fixmul(x - center_x, scale) + center_x;
+	fix scaled_y = fixmul(y - center_y, scale) + center_y;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_disk(x + i2f(offset_x), y + i2f(offset_y), r);
+	gr_disk(scaled_x + i2f(offset_x), scaled_y + i2f(offset_y), fixmul(r, scale));
 }
 
 static inline void hud_ucircle(fix x, fix y, fix r)
 {
+	const fix scale = fl2f(hud_get_scale_factor());
+	const fix center_x = i2f(grd_curcanv->cv_bitmap.bm_w / 2);
+	const fix center_y = i2f(grd_curcanv->cv_bitmap.bm_h / 2);
 	int offset_x = 0;
 	int offset_y = 0;
+	fix scaled_x = fixmul(x - center_x, scale) + center_x;
+	fix scaled_y = fixmul(y - center_y, scale) + center_y;
 
 	cockpit_gauge_offset(&offset_x, &offset_y);
-	gr_ucircle(x + i2f(offset_x), y + i2f(offset_y), r);
+	gr_ucircle(scaled_x + i2f(offset_x), scaled_y + i2f(offset_y), fixmul(r, scale));
 }
+
+#define gr_string hud_string
+#define gr_printf hud_printf
+#define gr_rect hud_rect
+#define gr_urect hud_urect
+#define gr_uline hud_uline
+#define gr_disk hud_disk
+#define gr_ucircle hud_ucircle
 
 int get_pnum_for_hud()
 {
@@ -4301,7 +4377,13 @@ void observer_show_bomb_highlights()
 
 void draw_hud()
 {
+	const float saved_fnt_scale_x = FNTScaleX;
+	const float saved_fnt_scale_y = FNTScaleY;
 	int pnum = get_pnum_for_hud();
+
+	FNTScaleX *= hud_get_scale_factor();
+	FNTScaleY *= hud_get_scale_factor();
+
 	if (Newdemo_state == ND_STATE_RECORDING)
 		if (Players[pnum].homing_object_dist >= 0)
 			newdemo_record_homing_distance(Players[pnum].homing_object_dist);
@@ -4345,11 +4427,17 @@ void draw_hud()
 				show_mousefs_indicator(Controls.raw_mouse_axis[0], Controls.raw_mouse_axis[1], Controls.raw_mouse_axis[2], GWIDTH/2, GHEIGHT/2, GHEIGHT/4);
 		}
 
+		FNTScaleX = saved_fnt_scale_x;
+		FNTScaleY = saved_fnt_scale_y;
 		return;
 	}
 
 	if (PlayerCfg.HudMode==3) // no hud, "immersion mode"
+	{
+		FNTScaleX = saved_fnt_scale_x;
+		FNTScaleY = saved_fnt_scale_y;
 		return;
+	}
 
 	// Cruise speed
 	if ( Player_num > -1 && Viewer->type==OBJ_PLAYER && Viewer->id==Player_num && PlayerCfg.CurrentCockpitMode != CM_REAR_VIEW)	{
@@ -4458,11 +4546,15 @@ void draw_hud()
 		hud_string(0x8000,GHEIGHT-LINE_SPACING,TXT_REAR_VIEW);
 	}
 
+	FNTScaleX = saved_fnt_scale_x;
+	FNTScaleY = saved_fnt_scale_y;
 }
 
 //print out some player statistics
 void render_gauges()
 {
+	const float saved_fnt_scale_x = FNTScaleX;
+	const float saved_fnt_scale_y = FNTScaleY;
 	int pnum = get_pnum_for_hud();
 
 	int energy = f2ir(Players[pnum].energy);
@@ -4470,6 +4562,9 @@ void render_gauges()
 	int cloak = ((Players[pnum].flags&PLAYER_FLAGS_CLOAKED) != 0);
 
 	Assert(PlayerCfg.CurrentCockpitMode==CM_FULL_COCKPIT || PlayerCfg.CurrentCockpitMode==CM_STATUS_BAR);
+
+	FNTScaleX *= hud_get_scale_factor();
+	FNTScaleY *= hud_get_scale_factor();
 
 	if (shields < 0 ) shields = 0;
 
@@ -4539,6 +4634,9 @@ void render_gauges()
 		}
 	} else
 		draw_player_ship(cloak, SB_SHIP_GAUGE_X, SB_SHIP_GAUGE_Y);
+
+	FNTScaleX = saved_fnt_scale_x;
+	FNTScaleY = saved_fnt_scale_y;
 }
 
 //	---------------------------------------------------------------------------------------------------------
