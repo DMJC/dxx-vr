@@ -803,8 +803,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 //double gz = (double)(pnt->z) / (double)(F1_0); 
 //con_printf(CON_NORMAL, "Creating weapon at offset %f, %f, %f\n", gx, gy, gz); 
 
-	m = vr_get_player_shot_matrix(obj);
-	vm_copy_transpose_matrix(&m, &m);
+	{
+		vms_matrix shot_matrix = vr_get_player_shot_matrix(obj);
+		vm_copy_transpose_matrix(&m, &shot_matrix);
+	}
 	vm_vec_rotate(&gun_point, pnt, &m);
 
 	vm_vec_add(&LaserPos,&obj->pos,&gun_point);
