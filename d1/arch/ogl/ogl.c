@@ -56,7 +56,9 @@
 #include "args.h"
 #include "xmodel.h"
 #include "oglprog.h"
-
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 //change to 1 for lots of spew.
 #if 0
 #define glmprintf(0,a) con_printf(CON_DEBUG, a)
@@ -1157,7 +1159,20 @@ void ogl_start_frame(void){
 #ifdef OGLES
 	perspective(90.0,1.0,0.1,5000.0);   
 #else
-	gluPerspective(90.0,1.0,0.1,5000.0);
+	if (vr_openvr_active())
+	{
+		const int eye = vr_openvr_current_eye();
+		float l = 0.0f;
+		float r = 0.0f;
+		float b = 0.0f;
+		float t = 0.0f;
+		const float near_z = 0.1f;
+		const float far_z = 5000.0f;
+		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+			glFrustum(l * near_z, r * near_z, t * near_z, b * near_z, near_z, far_z);
+		else
+			gluPerspective(90.0,1.0,near_z,far_z);		
+	}
 #endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();//clear matrix
