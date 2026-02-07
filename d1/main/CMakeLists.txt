@@ -65,6 +65,7 @@ add_executable (d1x-redux
     vclip.c
     wall.c
     weapon.c
+    vr_openvr.cpp
     )
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include)
@@ -170,21 +171,20 @@ if(OPENGL)
     find_package(GLEW REQUIRED)
     list(APPEND EXTRA_LIBRARIES GLEW::GLEW)
 endif()
+if(OPENVR)
+    find_path(OPENVR_INCLUDE_DIR openvr.h PATH_SUFFIXES openvr)
+    find_library(OPENVR_LIBRARY openvr_api)
+    if(NOT OPENVR_INCLUDE_DIR OR NOT OPENVR_LIBRARY)
+        message(FATAL_ERROR "OpenVR not found. Set OPENVR_INCLUDE_DIR and OPENVR_LIBRARY.")
+    endif()
+    target_include_directories(d1x-redux PRIVATE ${OPENVR_INCLUDE_DIR})
+    list(APPEND EXTRA_LIBRARIES ${OPENVR_LIBRARY})
+endif()
 if(PNG)
     find_package(PNG REQUIRED)
 endif()
-
-if(TARGET SDL2::SDL2)
-    target_link_libraries(d1x-redux PUBLIC SDL2::SDL2)
-elseif(TARGET SDL2::SDL2-static)
-    target_link_libraries(d1x-redux PUBLIC SDL2::SDL2-static)
-else()
-    target_include_directories(d1x-redux PUBLIC ${SDL2_INCLUDE_DIRS})
-    target_link_libraries(d1x-redux PUBLIC ${SDL2_LIBRARIES})
-endif()
-target_include_directories(d1x-redux PUBLIC ${PHYSFS_INCLUDE_DIR})
-
+target_include_directories(d1x-redux PUBLIC ${SDL2_INCLUDE_DIRS} ${PHYSFS_INCLUDE_DIR})
 target_link_libraries(d1x-redux PRIVATE 2d 3d arch_sdl iff maths mem misc texmap)
-target_link_libraries(d1x-redux PUBLIC ${OPENGL_LIBRARY} ${SDL2_MIXER_LIBRARIES} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
+target_link_libraries(d1x-redux PUBLIC ${OPENGL_LIBRARY} ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
 target_sources(d1x-redux PRIVATE vers_id.c)
 install(TARGETS d1x-redux RUNTIME DESTINATION .)
