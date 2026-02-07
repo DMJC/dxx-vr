@@ -992,7 +992,8 @@ static void game_render_frame_eye(fix eye_offset)
 
 static void game_render_frame_vr(void)
 {
-	game_render_frame_eye(vr_openvr_eye_offset(vr_openvr_current_eye()));
+	const fix vr_view_scale = i2f(3);
+	game_render_frame_eye(fixmul(vr_openvr_eye_offset(vr_openvr_current_eye()), vr_view_scale));
 #if 0
 	int prev_w = Screen_3d_window.cv_bitmap.bm_w;
 	int prev_h = Screen_3d_window.cv_bitmap.bm_h;
@@ -1018,7 +1019,7 @@ static void game_render_frame_vr(void)
 	for (int eye = 0; eye < 2; eye++)
 	{
 		vr_openvr_bind_eye(eye);
-		game_render_frame_eye(vr_openvr_eye_offset(eye));
+		game_render_frame_eye(fixmul(vr_openvr_eye_offset(eye), vr_view_scale));
 		vr_openvr_unbind_eye();
 	}
 

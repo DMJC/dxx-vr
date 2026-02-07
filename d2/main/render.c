@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "physics.h"
 #include "3d.h"
+#include "globvars.h"
 #include "gameseg.h"
 #include "vclip.h"
 #include "lighting.h"
@@ -1723,6 +1724,10 @@ void render_frame(fix eye_offset, int window_num)
 				vr_head_turn_enabled_prev = 0;
 			}
 			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
+			{
+				const fix vr_view_scale = i2f(3);
+				vm_vec_scale(&head_world, vr_view_scale);
+			}
 			vm_vec_add2(&Viewer_eye, &head_world);
 			if (Viewer == get_player_view_object())
 			{
@@ -1745,11 +1750,17 @@ void render_frame(fix eye_offset, int window_num)
 		vr_head_turn_enabled_prev = 0;
 	}
 
+	{
+		vms_vector window_scale_save = Window_scale;
+		if (vr_openvr_active())
+			vm_vec_scale(&Window_scale, i2f(3));
 #ifdef JOHN_ZOOM
-	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
+		g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
 #else
-	g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
+		g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
 #endif
+		Window_scale = window_scale_save;
+	}
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)

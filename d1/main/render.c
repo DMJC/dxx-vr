@@ -37,6 +37,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "physics.h"
 #include "3d.h"
+#include "globvars.h"
 #include "gameseg.h"
 #include "vclip.h"
 #include "lighting.h"
@@ -1456,21 +1457,33 @@ void render_frame(fix eye_offset)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,
+		{
+			vms_vector window_scale_save = Window_scale;
+			if (vr_openvr_active())
+				vm_vec_scale(&Window_scale, i2f(1) / 2);
+			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
+				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
+				&Viewer->orient,
 #endif
-			fixdiv(Render_zoom,Zoom_factor));
+				fixdiv(Render_zoom,Zoom_factor));
+			Window_scale = window_scale_save;
+		}
 #else
-		g3_set_view_matrix(&Viewer_eye,
+		{
+			vms_vector window_scale_save = Window_scale;
+			if (vr_openvr_active())
+				vm_vec_scale(&Window_scale, i2f(1) / 2);
+			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
+				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
+				&Viewer->orient,
 #endif
-			Render_zoom);
+				Render_zoom);
+			Window_scale = window_scale_save;
+		}
 #endif
 	}
 
