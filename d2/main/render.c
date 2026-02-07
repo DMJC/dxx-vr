@@ -37,6 +37,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "physics.h"
 #include "3d.h"
+#include "globvars.h"
 #include "gameseg.h"
 #include "vclip.h"
 #include "lighting.h"
