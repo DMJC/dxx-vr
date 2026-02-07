@@ -1723,7 +1723,10 @@ void render_frame(fix eye_offset, int window_num)
 				vr_head_turn_enabled_prev = 0;
 			}
 			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
-			vm_vec_scale(&head_world, F1_0 * 3);
+			{
+				const fix vr_view_scale = i2f(3);
+				vm_vec_scale(&head_world, vr_view_scale);
+			}
 			vm_vec_add2(&Viewer_eye, &head_world);
 			if (Viewer == get_player_view_object())
 			{
