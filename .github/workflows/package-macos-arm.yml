@@ -26,7 +26,16 @@ jobs:
         run: brew install --formula dylibbundler
 
       - name: Install library dependencies
-        run: brew install --formula sdl2 sdl2_mixer sdl12-compat physfs glew libogg mpg123 flac fluid-synth openvr
+        run: brew install --formula sdl2 sdl2_mixer sdl12-compat physfs glew libogg mpg123 flac fluid-synth
+
+      - name: Install OpenVR SDK
+        run: |
+          curl -L -o openvr.zip https://github.com/ValveSoftware/openvr/archive/refs/tags/v2.12.14.zip
+          unzip openvr.zip
+          cd openvr-2.12.14
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL=OFF
+          cmake --build build
+          sudo cmake --install build
 
       - name: Configure D1
         run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo

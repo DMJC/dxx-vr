@@ -60,3 +60,5 @@ Thumbs.db
 *.app
 d*x-rebirth
 /*/out/install
+build_d2_check/
+build.log

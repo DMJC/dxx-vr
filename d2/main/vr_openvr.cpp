@@ -25,6 +25,8 @@ extern int sdl_window_width, sdl_window_height;
 #endif
 
 #ifdef USE_OPENVR
+#undef min
+#undef max
 #include <openvr.h>
 
 static vr::IVRSystem *vr_system = NULL;
