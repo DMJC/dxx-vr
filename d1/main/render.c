@@ -1413,16 +1413,39 @@ void render_frame(fix eye_offset)
 		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
 	} else	{
 #ifdef USE_OPENVR
+		static vms_matrix last_vr_head_orient;
+		static int have_last_vr_head_orient = 0;
 		vms_matrix vr_view_orient = Viewer->orient;
 		vms_vector vr_head_pos;
 		vms_matrix vr_head_orient;
 		if (vr_openvr_active() && vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
 		{
+			vms_matrix base_orient = Viewer->orient;
 			vms_matrix composed;
-			vm_matrix_x_matrix(&composed, &Viewer->orient, &vr_head_orient);
+
+			if (Viewer == ConsoleObject && have_last_vr_head_orient)
+			{
+				vms_matrix inv_last_head;
+				vm_copy_transpose_matrix(&inv_last_head, &last_vr_head_orient);
+				vm_matrix_x_matrix(&base_orient, &Viewer->orient, &inv_last_head);
+			}
+
+			vm_matrix_x_matrix(&composed, &base_orient, &vr_head_orient);
 			vr_view_orient = composed;
-			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject)
+			if (Viewer == ConsoleObject)
+			{
 				Viewer->orient = composed;
+				last_vr_head_orient = vr_head_orient;
+				have_last_vr_head_orient = 1;
+			}
+			else
+			{
+				have_last_vr_head_orient = 0;
+			}
+		}
+		else
+		{
+			have_last_vr_head_orient = 0;
 		}
 #endif
 #ifdef JOHN_ZOOM
