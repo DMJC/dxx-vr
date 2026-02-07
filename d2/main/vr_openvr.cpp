@@ -57,6 +57,7 @@ static int vr_prev_canvas_height = 0;
 static int vr_prev_last_width = 0;
 static int vr_prev_last_height = 0;
 static float vr_eye_offset_adjust_m = 0.0f;
+static constexpr float vr_world_scale = 3.0f;
 static int vr_current_eye = -1;
 static bool vr_has_pose = false;
 static vms_matrix vr_head_orient = vmd_identity_matrix;
@@ -418,9 +419,9 @@ void vr_openvr_begin_frame(void)
 		vr_head_orient.fvec.x = fl2f(mat.m[2][0]);
 		vr_head_orient.fvec.y = fl2f(mat.m[2][1]);
 		vr_head_orient.fvec.z = fl2f(mat.m[2][2]);
-		vr_head_pos.x = fl2f(mat.m[0][3]);
-		vr_head_pos.y = fl2f(mat.m[1][3]);
-		vr_head_pos.z = -fl2f(mat.m[2][3]);
+		vr_head_pos.x = fl2f(mat.m[0][3]) * vr_world_scale;
+		vr_head_pos.y = fl2f(mat.m[1][3]) * vr_world_scale;
+		vr_head_pos.z = -fl2f(mat.m[2][3]) * vr_world_scale;
 		vr_has_pose = true;
 	}
 	else
@@ -468,7 +469,7 @@ fix vr_openvr_eye_offset(int eye)
 		ipd_m = 0.064f;
 	float offset_m = (eye == 0) ? -ipd_m * 0.5f : ipd_m * 0.5f;
 	offset_m += (eye == 0) ? vr_eye_offset_adjust_m : -vr_eye_offset_adjust_m;
-	return fl2f(offset_m);
+	return fl2f(offset_m * vr_world_scale);
 #else
 	(void)eye;
 	return 0;
