@@ -115,8 +115,32 @@ static void menu_vr_offset(int *x, int *y)
 		float r = 0.0f;
 		float b = 0.0f;
 		float t = 0.0f;
+		int has_eye = (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t));
 
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
+		if (!has_eye)
+		{
+			float l_left = 0.0f;
+			float r_left = 0.0f;
+			float b_left = 0.0f;
+			float t_left = 0.0f;
+			float l_right = 0.0f;
+			float r_right = 0.0f;
+			float b_right = 0.0f;
+			float t_right = 0.0f;
+			int has_left = vr_openvr_eye_projection(0, &l_left, &r_left, &b_left, &t_left);
+			int has_right = vr_openvr_eye_projection(1, &l_right, &r_right, &b_right, &t_right);
+
+			if (has_left && has_right)
+			{
+				l = (l_left + l_right) * 0.5f;
+				r = (r_left + r_right) * 0.5f;
+				b = (b_left + b_right) * 0.5f;
+				t = (t_left + t_right) * 0.5f;
+				has_eye = 1;
+			}
+		}
+
+		if (has_eye)
 		{
 			const float width = (float)grd_curcanv->cv_bitmap.bm_w;
 			const float height = (float)grd_curcanv->cv_bitmap.bm_h;
