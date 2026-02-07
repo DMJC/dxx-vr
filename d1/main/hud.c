@@ -122,11 +122,14 @@ void HUD_render_message_frame()
 			{
 				int offset_x = 0;
 				int offset_y = 0;
+				int draw_x = hud_scale_text_x(0x8000, &HUD_messages[i].message[0]);
+				int draw_y = hud_scale_screen_y(y);
 				cockpit_gauge_offset(&offset_x, &offset_y);
-				gr_string(0x8000 + offset_x, y + offset_y, &HUD_messages[i].message[0]);
+				gr_string(draw_x + offset_x, draw_y + offset_y, &HUD_messages[i].message[0]);
 			}
 #else
-			gr_string(0x8000,y, &HUD_messages[i].message[0] );
+			gr_string(hud_scale_text_x(0x8000, &HUD_messages[i].message[0]),
+				hud_scale_screen_y(y), &HUD_messages[i].message[0] );
 #endif
 			y += LINE_SPACING;
 		}
