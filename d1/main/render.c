@@ -77,6 +77,11 @@ int Max_linear_depth = 50; // Deepest segment at which linear interpolation will
 int Max_linear_depth_objects = 20;
 int Simple_model_threshhold_scale = 50; // switch to simpler model when the object has depth greater than this value times its radius.
 int Max_debris_objects = 15; // How many debris objects to create
+#ifdef USE_OPENVR
+static vms_matrix vr_last_head_orient;
+static int vr_head_turn_initialized = 0;
+static int vr_head_turn_enabled_prev = 0;
+#endif
 
 //used for checking if points have been rotated
 int	Clear_window_color=-1;
@@ -93,7 +98,11 @@ vms_vector Viewer_eye;  //valid during render
 
 int	N_render_segs;
 
+#ifdef USE_OPENVR
+fix Render_zoom = 0xB341;					//the player's zoom factor
+#else
 fix Render_zoom = 0x9000;					//the player's zoom factor
+#endif
 
 #ifndef NDEBUG
 ubyte object_rendered[MAX_OBJECTS];
@@ -1368,6 +1377,8 @@ fix Zoom_factor=F1_0;
 void render_frame(fix eye_offset)
 {
 	int start_seg_num;
+	vms_vector viewer_pos_save = Viewer->pos;
+	int restore_viewer_pos = 0;
 
 	if (Endlevel_sequence) {
 		render_endlevel_frame(eye_offset);
@@ -1404,27 +1415,15 @@ void render_frame(fix eye_offset)
 	if (start_seg_num==-1)
 		start_seg_num = Viewer->segnum;
 
+	vms_matrix base_orient = Viewer->orient;
 	if (Rear_view && (Viewer==ConsoleObject)) {
 		vms_matrix headm,viewm;
 		Player_head_angles.p = Player_head_angles.b = 0;
 		Player_head_angles.h = 0x7fff;
 		vm_angles_2_matrix(&headm,&Player_head_angles);
 		vm_matrix_x_matrix(&viewm,&Viewer->orient,&headm);
-		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
+		base_orient = viewm;
 	} else	{
-#ifdef USE_OPENVR
-		vms_matrix vr_view_orient = Viewer->orient;
-		vms_vector vr_head_pos;
-		vms_matrix vr_head_orient;
-		if (vr_openvr_active() && vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
-		{
-			vms_matrix composed;
-			vm_matrix_x_matrix(&composed, &Viewer->orient, &vr_head_orient);
-			vr_view_orient = composed;
-			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject)
-				Viewer->orient = composed;
-		}
-#endif
 #ifdef JOHN_ZOOM
 		if (keyd_pressed[KEY_RSHIFT] )	{
 			Zoom_factor += FrameTime*4;
@@ -1433,23 +1432,81 @@ void render_frame(fix eye_offset)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
 #else
-			&Viewer->orient,
-#endif
-			fixdiv(Render_zoom,Zoom_factor));
-#else
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
-#else
-			&Viewer->orient,
-#endif
-			Render_zoom);
 #endif
 	}
+
+#ifdef USE_OPENVR
+	if (vr_openvr_active())
+	{
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
+		{
+			vms_angvec head_angles;
+			vm_extract_angles_matrix(&head_angles, &head_orient);
+			head_angles.b = -head_angles.b;
+			vm_angles_2_matrix(&head_orient, &head_angles);
+			vms_matrix delta_orient = vmd_identity_matrix;
+			vms_vector head_world;
+			vms_matrix ship_orient = base_orient;
+			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject && !Rear_view)
+			{
+				if (!vr_head_turn_initialized)
+				{
+					vr_last_head_orient = head_orient;
+					vr_head_turn_initialized = 1;
+				}
+				else
+				{
+					vms_matrix last_transpose;
+					vm_copy_transpose_matrix(&last_transpose, &vr_last_head_orient);
+					vm_matrix_x_matrix(&delta_orient, &head_orient, &last_transpose);
+				}
+				vr_last_head_orient = head_orient;
+				{
+					vms_matrix ship_updated;
+					vm_matrix_x_matrix(&ship_updated, &ship_orient, &delta_orient);
+					ship_orient = ship_updated;
+					Viewer->orient = ship_orient;
+				}
+				vr_head_turn_enabled_prev = 1;
+			}
+			else
+			{
+				vr_head_turn_initialized = 0;
+				vr_last_head_orient = vmd_identity_matrix;
+				vr_head_turn_enabled_prev = 0;
+			}
+			vm_vec_rotate(&head_world, &head_pos, &ship_orient);
+			vm_vec_add2(&Viewer_eye, &head_world);
+			if (Viewer == ConsoleObject)
+			{
+				vm_vec_add2(&Viewer->pos, &head_world);
+				restore_viewer_pos = 1;
+			}
+			vm_matrix_x_matrix(&base_orient, &ship_orient, &head_orient);
+		}
+		else
+		{
+			vr_head_turn_initialized = 0;
+			vr_last_head_orient = vmd_identity_matrix;
+			vr_head_turn_enabled_prev = 0;
+		}
+	}
+	else
+	{
+		vr_head_turn_initialized = 0;
+		vr_last_head_orient = vmd_identity_matrix;
+		vr_head_turn_enabled_prev = 0;
+	}
+#endif
+
+#ifdef JOHN_ZOOM
+	g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom,Zoom_factor));
+#else
+	g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
+#endif
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
@@ -1458,6 +1515,9 @@ void render_frame(fix eye_offset)
 	}
 
 	render_mine(start_seg_num,eye_offset);
+
+	if (restore_viewer_pos)
+		Viewer->pos = viewer_pos_save;
 
 	g3_end_frame();
 }
