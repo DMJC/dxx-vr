@@ -54,28 +54,25 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define NEWHOMER
 
 #ifdef USE_OPENVR
-static vms_matrix vr_get_player_shot_matrix(const object *obj)
-{
-	vms_matrix shot_matrix = obj->orient;
-	vms_matrix head_orient;
-	vms_vector head_pos;
-
-	if (vr_openvr_active() && vr_openvr_head_pose(&head_orient, &head_pos))
-		vm_matrix_x_matrix(&shot_matrix, &obj->orient, &head_orient);
-
-	return shot_matrix;
-}
-
 static vms_vector vr_get_player_shot_orientation(const object *obj)
 {
-	return vr_get_player_shot_matrix(obj).fvec;
+	vms_vector shot_orientation = obj->orient.fvec;
+
+	if (vr_openvr_active())
+	{
+		vms_matrix head_orient;
+		vms_vector head_pos;
+		if (vr_openvr_head_pose(&head_orient, &head_pos))
+		{
+			vms_matrix view_orient;
+			vm_matrix_x_matrix(&view_orient, &obj->orient, &head_orient);
+			shot_orientation = view_orient.fvec;
+		}
+	}
+
+	return shot_orientation;
 }
 #else
-static vms_matrix vr_get_player_shot_matrix(const object *obj)
-{
-	return obj->orient;
-}
-
 static vms_vector vr_get_player_shot_orientation(const object *obj)
 {
 	return obj->orient.fvec;
@@ -852,9 +849,8 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	//	Now, make laser spread out.
 	LaserDir = shot_orientation; /* CED sniperpackets */ //obj->orient.fvec;
 	if ((spreadr != 0) || (spreadu != 0)) {
-		vms_matrix shot_matrix = vr_get_player_shot_matrix(obj);
-		vm_vec_scale_add2(&LaserDir, &shot_matrix.rvec, spreadr);
-		vm_vec_scale_add2(&LaserDir, &shot_matrix.uvec, spreadu);
+		vm_vec_scale_add2(&LaserDir, &obj->orient.rvec, spreadr);
+		vm_vec_scale_add2(&LaserDir, &obj->orient.uvec, spreadu);
 	}
 
 	objnum = Laser_create_new( &LaserDir, &LaserPos, LaserSeg, obj-Objects, laser_type, make_sound );
