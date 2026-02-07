@@ -47,6 +47,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h"
 #include "hudmsg.h"
 #include "playsave.h"
+#include "../3d/globvars.h"
 #ifdef USE_OPENVR
 #include "vr_openvr.h"
 #endif
@@ -60,14 +61,7 @@ static vms_vector vr_get_player_shot_orientation(const object *obj)
 
 	if (vr_openvr_active())
 	{
-		vms_matrix head_orient;
-		vms_vector head_pos;
-		if (vr_openvr_head_pose(&head_orient, &head_pos))
-		{
-			vms_matrix view_orient;
-			vm_matrix_x_matrix(&view_orient, &obj->orient, &head_orient);
-			shot_orientation = view_orient.fvec;
-		}
+		shot_orientation = View_matrix.fvec;
 	}
 
 	return shot_orientation;
