@@ -47,6 +47,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h"
 #include "hudmsg.h"
 #include "playsave.h"
+#include "../3d/globvars.h"
 #ifdef USE_OPENVR
 #include "vr_openvr.h"
 #endif
@@ -56,18 +57,14 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef USE_OPENVR
 static vms_vector vr_get_player_shot_orientation(const object *obj)
 {
-	vms_vector dir = obj->orient.fvec;
-	vms_matrix head_orient;
-	vms_vector head_pos;
+	vms_vector shot_orientation = obj->orient.fvec;
 
-	if (vr_openvr_active() && vr_openvr_head_pose(&head_orient, &head_pos))
+	if (vr_openvr_active())
 	{
-		vms_matrix shot_matrix;
-		vm_matrix_x_matrix(&shot_matrix, &obj->orient, &head_orient);
-		dir = shot_matrix.fvec;
+		shot_orientation = View_matrix.fvec;
 	}
 
-	return dir;
+	return shot_orientation;
 }
 #else
 static vms_vector vr_get_player_shot_orientation(const object *obj)
@@ -797,8 +794,8 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 //double gz = (double)(pnt->z) / (double)(F1_0); 
 //con_printf(CON_NORMAL, "Creating weapon at offset %f, %f, %f\n", gx, gy, gz); 
 
-	vm_copy_transpose_matrix(&m,&obj->orient);
-	vm_vec_rotate(&gun_point,pnt,&m);
+	vm_copy_transpose_matrix(&m, &obj->orient);
+	vm_vec_rotate(&gun_point, pnt, &m);
 
 	vm_vec_add(&LaserPos,&obj->pos,&gun_point);
 
@@ -1652,4 +1649,3 @@ void net_missile_firing(int player, int gun, int flags, vms_vector shot_orientat
 
 }
 #endif
-
