@@ -36,7 +36,6 @@ extern bitmap_index Gauges[MAX_GAUGE_BMS_MAC];   // Array of all gauge bitmaps.
 
 extern void add_points_to_score(int points);
 extern void add_bonus_points_to_score(int points);
-extern void cockpit_gauge_offset(int *x, int *y);
 
 void render_gauges(void);
 void init_gauges(void);

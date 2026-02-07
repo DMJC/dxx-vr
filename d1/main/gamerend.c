@@ -51,7 +51,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "gameseq.h"
 #include "args.h"
-#include "vr_openvr.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -464,37 +463,6 @@ extern int gr_bitblt_double;
 extern int force_cockpit_redraw;
 void update_cockpits();
 
-static void game_render_frame_eye(fix eye_offset)
-{
-	gr_set_current_canvas(&Screen_3d_window);
-	
-	render_frame(eye_offset);
-
-	update_cockpits();
-
-	if (Newdemo_state == ND_STATE_PLAYBACK)
-		Game_mode = Newdemo_game_mode;
-
-	if (is_observer() && !can_draw_observer_cockpit()) {
-		// Do not render gauges.
-	} else {
-		if (PlayerCfg.CurrentCockpitMode==CM_FULL_COCKPIT || PlayerCfg.CurrentCockpitMode==CM_STATUS_BAR)
-			render_gauges();
-	}
-
-	if (Newdemo_state == ND_STATE_PLAYBACK)
-		Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
-
-	gr_set_current_canvas(&Screen_3d_window);
-
-	game_draw_hud_stuff();
-
-#ifdef NETWORK
-	if (netplayerinfo_on && Game_mode & GM_MULTI)
-		show_netplayerinfo();
-#endif
-}
-
 //render a frame for the game
 void game_render_frame_mono(int flip)
 {
@@ -525,11 +493,6 @@ void game_render_frame_mono(int flip)
 	if (netplayerinfo_on && Game_mode & GM_MULTI)
 		show_netplayerinfo();
 #endif
-}
-
-static void game_render_frame_vr(void)
-{
-	game_render_frame_eye(vr_openvr_eye_offset(vr_openvr_current_eye()));
 }
 
 void toggle_cockpit()
@@ -567,11 +530,6 @@ extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 // This actually renders the new cockpit onto the screen.
 void update_cockpits()
 {
-	int cockpit_offset_x = 0;
-	int cockpit_offset_y = 0;
-
-	cockpit_gauge_offset(&cockpit_offset_x, &cockpit_offset_y);
-
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not draw cockpit.
 	} else {
@@ -586,17 +544,17 @@ void update_cockpits()
 			case CM_FULL_COCKPIT:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
+				ogl_ubitmapm_cs (0, 0, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
 	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
+				gr_ubitmapm(0,0, bm);
 	#endif
 				break;
 			case CM_REAR_VIEW:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
+				ogl_ubitmapm_cs (0, 0, -1, grd_curcanv->cv_bitmap.bm_h, bm,255, F1_0);
 	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y, bm);
+				gr_ubitmapm(0,0, bm);
 	#endif
 				break;
 			case CM_FULL_SCREEN:
@@ -605,9 +563,9 @@ void update_cockpits()
 			case CM_STATUS_BAR:
 				gr_set_current_canvas(NULL);
 	#ifdef OGL
-				ogl_ubitmapm_cs (cockpit_offset_x, cockpit_offset_y + (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
+				ogl_ubitmapm_cs (0, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72), -1, ((int) ((double) (bm->bm_h) * (HIRESMODE?(double)SHEIGHT/480:(double)SHEIGHT/200) + 0.5)), bm,255, F1_0);
 	#else
-				gr_ubitmapm(cockpit_offset_x,cockpit_offset_y + SHEIGHT-bm->bm_h,bm);
+				gr_ubitmapm(0,SHEIGHT-bm->bm_h,bm);
 	#endif
 				break;
 			case CM_LETTERBOX:
@@ -635,10 +593,7 @@ void game_render_frame()
 {
 	set_screen_mode( SCREEN_GAME );
 	play_homing_warning();
-	if (vr_openvr_active())
-		game_render_frame_vr();
-	else
-		game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
+	game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
 }
 
 //show a message in a nice little box

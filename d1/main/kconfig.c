@@ -22,7 +22,6 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <math.h>
 
 #include "dxxerror.h"
 #include "pstypes.h"
@@ -53,9 +52,6 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "cntrlcen.h"
 #include "collide.h"
 #include "playsave.h"
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -115,10 +111,6 @@ typedef struct kc_menu
 	window	*wind;
 	kc_item	*items;
 	const char	*title;
-	int	base_x;
-	int	base_y;
-	int	width;
-	int	height;
 	int	nitems;
 	int	citem;
 	int	old_jaxis[JOY_MAX_AXES];
@@ -127,38 +119,6 @@ typedef struct kc_menu
 	ubyte	q_fade_i;	// for flashing the question mark
 	ubyte	mouse_state;
 } kc_menu;
-
-#ifdef USE_OPENVR
-static void kconfig_vr_offset(int *x, int *y)
-{
-	int offset_x = 0;
-	int offset_y = 0;
-
-	if (vr_openvr_active())
-	{
-		const int eye = vr_openvr_current_eye();
-		float l = 0.0f;
-		float r = 0.0f;
-		float b = 0.0f;
-		float t = 0.0f;
-
-		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-		{
-			const float width = (float)grd_curscreen->sc_canvas.cv_bitmap.bm_w;
-			const float height = (float)grd_curscreen->sc_canvas.cv_bitmap.bm_h;
-			const float x_ndc = (r + l) / (r - l);
-			const float y_ndc = (t + b) / (t - b);
-			const int center_x = (int)lroundf((-x_ndc * 0.5f + 0.5f) * width);
-			const int center_y = (int)lroundf((0.5f - 0.5f * y_ndc) * height);
-			offset_x = center_x - (grd_curscreen->sc_canvas.cv_bitmap.bm_w / 2);
-			offset_y = center_y - (grd_curscreen->sc_canvas.cv_bitmap.bm_h / 2);
-		}
-	}
-
-	*x = offset_x;
-	*y = offset_y;
-}
-#endif
 
 const ubyte DefaultKeySettings[3][MAX_CONTROLS] = {
 {0xc8,0x48,0xd0,0x50,0xcb,0x4b,0xcd,0x4d,0x38,0xff,0xff,0x4f,0xff,0x51,0xff,0x4a,0xff,0x4e,0xff,0xff,0x10,0x47,0x12,0x49,0x1d,0x9d,0x39,0xff,0x21,0xff,0x1e,0xff,0x2c,0xff,0x30,0xff,0x13,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xf,0xff,0x33,0x0,0x34,0x0},
@@ -491,20 +451,6 @@ void kconfig_draw(kc_menu *menu)
 
 	gr_set_current_canvas(NULL);
 	nm_draw_background(((SWIDTH-w)/2)-BORDERX,((SHEIGHT-h)/2)-BORDERY,((SWIDTH-w)/2)+w+BORDERX,((SHEIGHT-h)/2)+h+BORDERY);
-#ifdef USE_OPENVR
-	{
-		int offset_x = 0;
-		int offset_y = 0;
-
-		if (vr_openvr_active())
-		{
-			kconfig_vr_offset(&offset_x, &offset_y);
-			gr_init_sub_canvas(window_get_canvas(menu->wind), &grd_curscreen->sc_canvas,
-							   menu->base_x + offset_x, menu->base_y + offset_y,
-							   menu->width, menu->height);
-		}
-	}
-#endif
 
 	gr_set_current_canvas(window_get_canvas(menu->wind));
 
@@ -963,13 +909,9 @@ void kconfig_sub(kc_item * items,int nitems, char *title)
 	menu->citem = 0;
 	menu->changing = 0;
 	menu->mouse_state = 0;
-	menu->base_x = (SWIDTH - FSPACX(320))/2;
-	menu->base_y = (SHEIGHT - FSPACY(200))/2;
-	menu->width = FSPACX(320);
-	menu->height = FSPACY(200);
 
-	if (!(menu->wind = window_create(&grd_curscreen->sc_canvas, menu->base_x, menu->base_y, menu->width, menu->height,
-				   (int (*)(window *, d_event *, void *))kconfig_handler, menu)))
+	if (!(menu->wind = window_create(&grd_curscreen->sc_canvas, (SWIDTH - FSPACX(320))/2, (SHEIGHT - FSPACY(200))/2, FSPACX(320), FSPACY(200),
+					   (int (*)(window *, d_event *, void *))kconfig_handler, menu)))
 		d_free(menu);
 }
 

@@ -414,36 +414,6 @@ static const char *const system_name[] = {
 			"Baloris Prime",
 			"Omega System"};
 
-#ifdef OGL
-extern void get_char_width(ubyte c,ubyte c2,int *width,int *spacing);
-
-static void automap_draw_vflipped_text(int x, int y, const char *text)
-{
-	grs_font *const font = grd_curcanv->cv_font;
-	const int fg = grd_curcanv->cv_font_fg_color;
-
-	for (const unsigned char *ch = (const unsigned char *)text; *ch; ++ch)
-	{
-		int width, spacing;
-		int letter;
-
-		get_char_width(*ch, *(ch + 1), &width, &spacing);
-		letter = *ch - font->ft_minchar;
-		if (letter >= 0 && letter <= font->ft_maxchar - font->ft_minchar)
-		{
-			const int glyph_h = (int)(font->ft_h * FNTScaleY);
-			const int draw_y = grd_curcanv->cv_bitmap.bm_h - y - glyph_h;
-			if (font->ft_flags & FT_COLOR)
-				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], -1, F1_0);
-			else
-				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], fg, F1_0);
-		}
-
-		x += spacing;
-	}
-}
-#endif
-
 void name_frame(automap *am)
 {
 	char	name_level_left[128],name_level_right[128];
@@ -463,16 +433,9 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
+	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
 	gr_get_string_size(name_level_right,&wr,&h,&aw);
-		if (am->rendering_to_vr_texture){
-	#ifdef OGL
-		automap_draw_vflipped_text((SWIDTH/64), (SHEIGHT/48), name_level_left);
-		automap_draw_vflipped_text(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64), (SHEIGHT/48), name_level_right);
-    #endif
-        }else{
-		gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level_left);
-		gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
-		}
+	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
 }
 
 static void automap_apply_input(automap *am)

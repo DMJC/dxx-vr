@@ -67,9 +67,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -138,7 +135,6 @@ typedef struct automap
 	int			blue_48;
 	int			red_48;
 	control_info controls;
-	int rendering_to_vr_texture;
 } automap;
 
 #define MAX_EDGES_FROM_VERTS(v)     ((v)*4)
@@ -237,38 +233,9 @@ void draw_player( object * obj )
 	automap_draw_line(&sphere_point, &arrow_point);
 }
 
-#ifdef OGL
-extern void get_char_width(ubyte c,ubyte c2,int *width,int *spacing);
-
-static void automap_draw_vflipped_text(int x, int y, const char *text)
-{
-	grs_font *const font = grd_curcanv->cv_font;
-	const int fg = grd_curcanv->cv_font_fg_color;
-
-	for (const unsigned char *ch = (const unsigned char *)text; *ch; ++ch)
-	{
-		int width, spacing;
-		int letter;
-
-		get_char_width(*ch, *(ch + 1), &width, &spacing);
-		letter = *ch - font->ft_minchar;
-		if (letter >= 0 && letter <= font->ft_maxchar - font->ft_minchar)
-		{
-			const int glyph_h = (int)(font->ft_h * FNTScaleY);
-			const int draw_y = grd_curcanv->cv_bitmap.bm_h - y - glyph_h;
-			if (font->ft_flags & FT_COLOR)
-				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], -1, F1_0);
-			else
-				ogl_ubitmapm_cs_vflip(x, draw_y, width, glyph_h, &font->ft_bitmaps[letter], fg, F1_0);
-		}
-		x += spacing;
-	}
-}
-#endif
-
 void name_frame(automap *am)
 {
-	char name_level[128];
+	char		name_level[128];
 	
 	if (Current_level_num > 0)
 		sprintf(name_level, "%s %i: ",TXT_LEVEL, Current_level_num);
@@ -279,14 +246,7 @@ void name_frame(automap *am)
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(am->green_31,-1);
-	
-	if (am->rendering_to_vr_texture){
-#ifdef OGL
-       	automap_draw_vflipped_text((SWIDTH/64),(SHEIGHT/48), name_level);
-#endif
-    }else{
-     	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level);
-    }	
+	gr_printf((SWIDTH/64),(SHEIGHT/48),"%s", name_level);
 }
 
 static void automap_apply_input(automap *am)
@@ -374,7 +334,8 @@ static void automap_apply_input(automap *am)
 	}
 }
 
-static void draw_automap_to_canvas(automap *am)
+
+void draw_automap(automap *am)
 {
 	int i;
 	int color;
@@ -408,14 +369,6 @@ static void draw_automap_to_canvas(automap *am)
 		gr_string(265*(SWIDTH/640.0), 61*(SHEIGHT/480.0), "F9/F10 Changes viewing distance");
 	}
 	
-	{
-		const int map_x = (grd_curcanv->cv_bitmap.bm_w/23);
-		const int map_y = (grd_curcanv->cv_bitmap.bm_h/6);
-		const int map_w = (grd_curcanv->cv_bitmap.bm_w/1.1);
-		const int map_h = (grd_curcanv->cv_bitmap.bm_h/1.45);
-		gr_init_sub_canvas(&am->automap_view, grd_curcanv, map_x, map_y, map_w, map_h);
-	}
-
 	gr_set_current_canvas(&am->automap_view);
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
@@ -494,34 +447,6 @@ static void draw_automap_to_canvas(automap *am)
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator) /* Old School Mouse */
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
-}
-
-void draw_automap(automap *am)
-{
-	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
-		am->leave_mode = 1;
-
-#ifdef USE_OPENVR
-	if (vr_openvr_active())
-	{
-		const int eye = vr_openvr_current_eye();
-		if (eye == 0)
-		{
-			vr_openvr_bind_menu_target();
-			am->rendering_to_vr_texture = 1;
-			draw_automap_to_canvas(am);
-			am->rendering_to_vr_texture = 0;
-			vr_openvr_unbind_menu_target();
-		}
-		if (eye >= 0)
-			vr_openvr_draw_menu_quad_for_eye(eye, 0, 1.2f, 1, 1);
-	}
-	else
-#endif
-	{
-		am->rendering_to_vr_texture = 0;
-		draw_automap_to_canvas(am);
-	}
 
 	am->t2 = timer_query();
 	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)

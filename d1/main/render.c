@@ -55,9 +55,6 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 #include "args.h"
-#ifdef USE_OPENVR
-#include "vr_openvr.h"
-#endif
 
 #define INITIAL_LOCAL_LIGHT (F1_0/4)    // local light value in segment of occurence (of light emission)
 
@@ -1412,19 +1409,6 @@ void render_frame(fix eye_offset)
 		vm_matrix_x_matrix(&viewm,&Viewer->orient,&headm);
 		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
 	} else	{
-#ifdef USE_OPENVR
-		vms_matrix vr_view_orient = Viewer->orient;
-		vms_vector vr_head_pos;
-		vms_matrix vr_head_orient;
-		if (vr_openvr_active() && vr_openvr_head_pose(&vr_head_orient, &vr_head_pos))
-		{
-			vms_matrix composed;
-			vm_matrix_x_matrix(&composed, &Viewer->orient, &vr_head_orient);
-			vr_view_orient = composed;
-			if (GameCfg.VRHeadTurnsShip && Viewer == ConsoleObject)
-				Viewer->orient = composed;
-		}
-#endif
 #ifdef JOHN_ZOOM
 		if (keyd_pressed[KEY_RSHIFT] )	{
 			Zoom_factor += FrameTime*4;
@@ -1433,21 +1417,9 @@ void render_frame(fix eye_offset)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
+		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,fixdiv(Render_zoom,Zoom_factor));
 #else
-			&Viewer->orient,
-#endif
-			fixdiv(Render_zoom,Zoom_factor));
-#else
-		g3_set_view_matrix(&Viewer_eye,
-#ifdef USE_OPENVR
-			vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
-#else
-			&Viewer->orient,
-#endif
-			Render_zoom);
+		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,Render_zoom);
 #endif
 	}
 
