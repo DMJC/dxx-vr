@@ -54,22 +54,28 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define NEWHOMER
 
 #ifdef USE_OPENVR
-static vms_vector vr_get_player_shot_orientation(const object *obj)
+static vms_matrix vr_get_player_shot_matrix(const object *obj)
 {
-	vms_vector dir = obj->orient.fvec;
+	vms_matrix shot_matrix = obj->orient;
 	vms_matrix head_orient;
 	vms_vector head_pos;
 
 	if (vr_openvr_active() && vr_openvr_head_pose(&head_orient, &head_pos))
-	{
-		vms_matrix shot_matrix;
 		vm_matrix_x_matrix(&shot_matrix, &obj->orient, &head_orient);
-		dir = shot_matrix.fvec;
-	}
 
-	return dir;
+	return shot_matrix;
+}
+
+static vms_vector vr_get_player_shot_orientation(const object *obj)
+{
+	return vr_get_player_shot_matrix(obj).fvec;
 }
 #else
+static vms_matrix vr_get_player_shot_matrix(const object *obj)
+{
+	return obj->orient;
+}
+
 static vms_vector vr_get_player_shot_orientation(const object *obj)
 {
 	return obj->orient.fvec;
@@ -797,8 +803,9 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 //double gz = (double)(pnt->z) / (double)(F1_0); 
 //con_printf(CON_NORMAL, "Creating weapon at offset %f, %f, %f\n", gx, gy, gz); 
 
-	vm_copy_transpose_matrix(&m,&obj->orient);
-	vm_vec_rotate(&gun_point,pnt,&m);
+	m = vr_get_player_shot_matrix(obj);
+	vm_copy_transpose_matrix(&m, &m);
+	vm_vec_rotate(&gun_point, pnt, &m);
 
 	vm_vec_add(&LaserPos,&obj->pos,&gun_point);
 
@@ -846,8 +853,9 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	//	Now, make laser spread out.
 	LaserDir = shot_orientation; /* CED sniperpackets */ //obj->orient.fvec;
 	if ((spreadr != 0) || (spreadu != 0)) {
-		vm_vec_scale_add2(&LaserDir, &obj->orient.rvec, spreadr);
-		vm_vec_scale_add2(&LaserDir, &obj->orient.uvec, spreadu);
+		vms_matrix shot_matrix = vr_get_player_shot_matrix(obj);
+		vm_vec_scale_add2(&LaserDir, &shot_matrix.rvec, spreadr);
+		vm_vec_scale_add2(&LaserDir, &shot_matrix.uvec, spreadu);
 	}
 
 	objnum = Laser_create_new( &LaserDir, &LaserPos, LaserSeg, obj-Objects, laser_type, make_sound );
@@ -1652,4 +1660,3 @@ void net_missile_firing(int player, int gun, int flags, vms_vector shot_orientat
 
 }
 #endif
-
