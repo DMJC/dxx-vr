@@ -1749,19 +1749,17 @@ void render_frame(fix eye_offset, int window_num)
 		vr_head_turn_enabled_prev = 0;
 	}
 
+	{
+		vms_vector window_scale_save = Window_scale;
+		if (vr_openvr_active())
+			vm_vec_scale(&Window_scale, i2f(3));
 #ifdef JOHN_ZOOM
-	{
-		const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
-		const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
-		g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(render_zoom, Zoom_factor));
-	}
+		g3_set_view_matrix(&Viewer_eye, &base_orient, fixdiv(Render_zoom, Zoom_factor));
 #else
-	{
-		const fix vr_view_scale = vr_openvr_active() ? i2f(3) : F1_0;
-		const fix render_zoom = fixdiv(Render_zoom, vr_view_scale);
-		g3_set_view_matrix(&Viewer_eye, &base_orient, render_zoom);
-	}
+		g3_set_view_matrix(&Viewer_eye, &base_orient, Render_zoom);
 #endif
+		Window_scale = window_scale_save;
+	}
 
 	if (Clear_window == 1) {
 		if (Clear_window_color == -1)
