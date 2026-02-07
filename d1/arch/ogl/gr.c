@@ -87,6 +87,7 @@
 
 #ifdef OGLES
 int sdl_video_flags = 0;
+int sdl_window_width = 0, sdl_window_height = 0;
 
 #ifdef RPI
 static EGL_DISPMANX_WINDOW_T nativewindow;
@@ -97,10 +98,12 @@ static DISPMANX_DISPLAY_HANDLE_T dispman_display=DISPMANX_NO_HANDLE;
 #else
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 int sdl_video_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+int sdl_window_width = 0, sdl_window_height = 0;
 static SDL_Window *sdl_window = NULL;
 static SDL_GLContext sdl_gl_context = NULL;
 #else
 int sdl_video_flags = SDL_OPENGL;
+int sdl_window_width = 0, sdl_window_height = 0;
 #endif
 #endif
 int gr_installed = 0;
@@ -359,6 +362,8 @@ int ogl_init_window(int x, int y)
 	}
 
 	if (!sdl_window) {
+		sdl_window_width = use_x;
+		sdl_window_height = use_y;
 		sdl_window = SDL_CreateWindow(DESCENT_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, use_x, use_y, use_flags);
 		if (!sdl_window)
 			Error("Could not create SDL window: %s\n", SDL_GetError());
@@ -368,6 +373,8 @@ int ogl_init_window(int x, int y)
 			SDL_FreeSurface(icon);
 		}
 	} else {
+		sdl_window_width = use_x;
+		sdl_window_height = use_y;
 		SDL_SetWindowSize(sdl_window, use_x, use_y);
 		SDL_SetWindowFullscreen(sdl_window, (use_flags & SDL_WINDOW_FULLSCREEN) ? SDL_WINDOW_FULLSCREEN : 0);
 		SDL_SetWindowBordered(sdl_window, (use_flags & SDL_WINDOW_BORDERLESS) ? SDL_FALSE : SDL_TRUE);
@@ -407,6 +414,8 @@ int ogl_init_window(int x, int y)
 		Error("Could not set %dx%dx%d opengl video mode: %s\n", x, y, GameArg.DbgBpp, SDL_GetError());
 #endif
 	}
+	sdl_window_width = use_x;
+	sdl_window_height = use_y;
 #endif
 
 #ifdef OGLES
@@ -535,7 +544,10 @@ int gr_toggle_fullscreen(void)
 	{
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 		if (sdl_window)
+		{
 			SDL_SetWindowFullscreen(sdl_window, (sdl_video_flags & SDL_WINDOW_FULLSCREEN) ? SDL_WINDOW_FULLSCREEN : 0);
+			SDL_GetWindowSize(sdl_window, &sdl_window_width, &sdl_window_height);
+		}
 #else
 		if (sdl_no_modeswitch == 0) {
 			if (!SDL_VideoModeOK(SM_W(Game_screen_mode), SM_H(Game_screen_mode), GameArg.DbgBpp, sdl_video_flags))
@@ -547,6 +559,8 @@ int gr_toggle_fullscreen(void)
 			{
 				Error("Could not set %dx%dx%d opengl video mode: %s\n", SM_W(Game_screen_mode), SM_H(Game_screen_mode), GameArg.DbgBpp, SDL_GetError());
 			}
+			sdl_window_width = SM_W(Game_screen_mode);
+			sdl_window_height = SM_H(Game_screen_mode);
 		}
 #endif
 #ifdef RPI

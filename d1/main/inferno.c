@@ -73,6 +73,9 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "event.h"
 #include "rbaudio.h"
 #include "messagebox.h"
+#ifdef USE_OPENVR
+#include "vr_openvr.h"
+#endif
 #ifdef EDITOR
 #include "editor/editor.h"
 #include "editor/kdefs.h"
@@ -390,6 +393,9 @@ int main(int argc, char *argv[])
 	ReadConfigFile();
 	if (GameArg.GfxVREnabled)
 		GameCfg.VREnabled = 1;
+#ifdef USE_OPENVR
+	vr_openvr_init();
+#endif
 
 	PHYSFSX_addArchiveContent();
 
@@ -399,6 +405,9 @@ int main(int argc, char *argv[])
 
 	con_printf(CON_VERBOSE, "Going into graphics mode...\n");
 	gr_set_mode(Game_screen_mode);
+#ifdef USE_OPENVR
+	vr_openvr_init_gl();
+#endif
 
 	// Load the palette stuff. Returns non-zero if error.
 	con_printf(CON_DEBUG, "Initializing palette system...\n" );
@@ -478,6 +487,9 @@ int main(int argc, char *argv[])
 
 	con_printf( CON_DEBUG, "\nCleanup...\n" );
 	close_game();
+#ifdef USE_OPENVR
+	vr_openvr_shutdown();
+#endif
 	texmerge_close();
 	gamedata_close();
 	gamefont_close();
