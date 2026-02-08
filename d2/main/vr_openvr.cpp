@@ -184,9 +184,18 @@ static void vr_openvr_draw_curved_quad(GLuint texture, float tex_u_max, float te
 		const float near_z = 0.5f;
 		const float far_z = 10.0f;
 		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		{
+			const float projection_scale = vr_openvr_projection_scale();
+			const float scaled_near_z = near_z * projection_scale;
+			const float scaled_far_z = far_z * projection_scale;
+			glFrustum(l * scaled_near_z, r * scaled_near_z, b * scaled_near_z, t * scaled_near_z, scaled_near_z, scaled_far_z);
+		}
 		else
-			glFrustum(-1.0, 1.0, -0.75, 0.75, near_z, far_z);
+		{
+			const float projection_scale = vr_openvr_projection_scale();
+			glFrustum(-1.0f * projection_scale, 1.0f * projection_scale, -0.75f * projection_scale, 0.75f * projection_scale,
+				near_z * projection_scale, far_z * projection_scale);
+		}
 	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -251,9 +260,18 @@ static void vr_openvr_draw_flat_quad(GLuint texture, float tex_u_max, float tex_
 		const float near_z = 0.5f;
 		const float far_z = 10.0f;
 		if (eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-			glFrustum(l * near_z, r * near_z, b * near_z, t * near_z, near_z, far_z);
+		{
+			const float projection_scale = vr_openvr_projection_scale();
+			const float scaled_near_z = near_z * projection_scale;
+			const float scaled_far_z = far_z * projection_scale;
+			glFrustum(l * scaled_near_z, r * scaled_near_z, b * scaled_near_z, t * scaled_near_z, scaled_near_z, scaled_far_z);
+		}
 		else
-			glFrustum(-1.0, 1.0, -0.75, 0.75, near_z, far_z);
+		{
+			const float projection_scale = vr_openvr_projection_scale();
+			glFrustum(-1.0f * projection_scale, 1.0f * projection_scale, -0.75f * projection_scale, 0.75f * projection_scale,
+				near_z * projection_scale, far_z * projection_scale);
+		}
 	}
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -484,6 +502,15 @@ void vr_openvr_adjust_eye_offset(float delta_meters)
 #endif
 }
 
+float vr_openvr_projection_scale(void)
+{
+#ifdef USE_OPENVR
+	return (GameCfg.VRProjectionScale > 0) ? (GameCfg.VRProjectionScale / 100.0f) : 1.0f;
+#else
+	return 1.0f;
+#endif
+}
+
 int vr_openvr_eye_projection(int eye, float *left, float *right, float *bottom, float *top)
 {
 #ifdef USE_OPENVR
@@ -496,14 +523,6 @@ int vr_openvr_eye_projection(int eye, float *left, float *right, float *bottom, 
 	float t = 0.0f;
 	float b = 0.0f;
 	vr_system->GetProjectionRaw(vr_eye, &l, &r, &t, &b);
-	const float projection_scale = (GameCfg.VRProjectionScale > 0) ? (GameCfg.VRProjectionScale / 100.0f) : 1.0f;
-	if (projection_scale != 1.0f)
-	{
-		l *= projection_scale;
-		r *= projection_scale;
-		t *= projection_scale;
-		b *= projection_scale;
-	}
 	if (left)
 		*left = l;
 	if (right)
