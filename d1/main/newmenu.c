@@ -2117,9 +2117,14 @@ int listbox_draw(window *wind, listbox *lb)
 
 			if (lb->marquee_maxchars && strlen(lb->item[i]) > lb->marquee_maxchars)
 			{
-				char *shrtstr = d_malloc(lb->marquee_maxchars+1);
+#define MAX_MARQUEE_LEN 4096
+				char shrtstr[MAX_MARQUEE_LEN];
+				int max_chars = lb->marquee_maxchars;
 				static int prev_citem = -1;
-				
+
+				if (max_chars >= MAX_MARQUEE_LEN)
+					max_chars = MAX_MARQUEE_LEN;
+
 				if (prev_citem != lb->citem)
 				{
 					lb->marquee_charpos = lb->marquee_scrollback = 0;
@@ -2127,8 +2132,6 @@ int listbox_draw(window *wind, listbox *lb)
 					prev_citem = lb->citem;
 				}
 
-				memset(shrtstr, '\0', lb->marquee_maxchars+1);
-				
 				if (i == lb->citem)
 				{
 					if (lb->marquee_lasttime + (F1_0/3) < timer_query())
@@ -2146,14 +2149,14 @@ int listbox_draw(window *wind, listbox *lb)
 						lb->marquee_charpos = strlen(lb->item[i]) - lb->marquee_maxchars + 1;
 						lb->marquee_scrollback = 1;
 					}
-					snprintf(shrtstr, lb->marquee_maxchars, "%s", lb->item[i]+lb->marquee_charpos);
+					snprintf(shrtstr, max_chars, "%s", lb->item[i]+lb->marquee_charpos);
 				}
 				else
 				{
-					snprintf(shrtstr, lb->marquee_maxchars, "%s", lb->item[i]);
+					snprintf(shrtstr, max_chars, "%s", lb->item[i]);
 				}
 				gr_string( lb->box_x+FSPACX(5), y, shrtstr );
-				d_free(shrtstr);
+#undef MAX_MARQUEE_LEN
 			}
 			else
 			{
