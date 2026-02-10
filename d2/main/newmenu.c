@@ -1810,6 +1810,7 @@ struct listbox
 	short swidth, sheight; float fntscalex, fntscaley; // with these we check if resolution or fonts have changed so listbox structure can be recreated
 	int mouse_state;
 	void *userdata;
+	char *marquee_buffer;
 };
 
 char **listbox_get_items(listbox *lb)
@@ -2089,6 +2090,13 @@ void listbox_create_structure( listbox *lb)
 		lb->marquee_lasttime = timer_query();
 	}
 
+	if (lb->marquee_buffer)
+		d_free(lb->marquee_buffer);
+	lb->marquee_buffer = NULL;
+
+	if (lb->marquee_maxchars)
+		lb->marquee_buffer = d_malloc(lb->marquee_maxchars + 1);
+
 	lb->box_x = (grd_curcanv->cv_bitmap.bm_w-lb->box_w)/2;
 	lb->box_y = (grd_curcanv->cv_bitmap.bm_h-(lb->height+lb->title_height))/2 + lb->title_height;
 	if ( lb->box_y < lb->title_height )
@@ -2140,7 +2148,7 @@ int listbox_draw(window *wind, listbox *lb)
 
 			if (lb->marquee_maxchars && strlen(lb->item[i]) > lb->marquee_maxchars)
 			{
-				char *shrtstr = d_malloc(lb->marquee_maxchars+1);
+				char *shrtstr = lb->marquee_buffer;
 				static int prev_citem = -1;
 				
 				if (prev_citem != lb->citem)
@@ -2176,7 +2184,6 @@ int listbox_draw(window *wind, listbox *lb)
 					snprintf(shrtstr, lb->marquee_maxchars, "%s", lb->item[i]);
 				}
 				gr_string( lb->box_x+FSPACX(5), y, shrtstr );
-				d_free(shrtstr);
 			}
 			else
 			{
@@ -2244,6 +2251,8 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 			break;
 
 		case EVENT_WINDOW_CLOSE:
+			if (lb->marquee_buffer)
+				d_free(lb->marquee_buffer);
 			d_free(lb);
 			break;
 
