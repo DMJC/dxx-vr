@@ -2078,6 +2078,9 @@ multi_do_fire(const ubyte *buf)
     
 	// Act out the actual shooting
 	pnum = buf[1];
+	if (pnum < 0 || pnum >= N_players)
+		return;
+
 	weapon = (int)buf[2];
 	flags = buf[4];
 	Network_laser_track = GET_INTEL_SHORT(buf + 6);
@@ -2201,6 +2204,8 @@ multi_do_position(const ubyte *buf)
 #endif
 
 	pnum = buf[1];
+	if (pnum >= N_players)
+		return;
 
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[Players[pnum].objnum], (shortpos *)(buf + 2),0);
@@ -2221,6 +2226,12 @@ multi_do_reappear(const ubyte *buf)
 	ubyte pnum = buf[1];
 
 	objnum = GET_INTEL_SHORT(buf + 2);
+
+	if (pnum >= N_players)
+		return;
+
+	if ((objnum < 0) || (objnum > Highest_object_index))
+		return;
 
 	Assert(objnum >= 0);
 	if (pnum != Objects[objnum].id)
@@ -2699,6 +2710,9 @@ multi_do_cloak(const ubyte *buf)
 
 	pnum = buf[1];
 
+	if (pnum < 0 || pnum >= N_players)
+		return;
+
 	Assert(pnum < N_players);
 
 	Players[pnum].flags |= PLAYER_FLAGS_CLOAKED;
@@ -2719,6 +2733,9 @@ multi_do_decloak(const ubyte *buf)
 
 	pnum = buf[1];
 
+	if (pnum < 0 || pnum >= N_players)
+		return;
+
 	if (Newdemo_state == ND_STATE_RECORDING)
 		newdemo_record_multi_decloak(pnum);
 
@@ -2730,6 +2747,9 @@ multi_do_invuln(const ubyte *buf)
 	int pnum;
 
 	pnum = buf[1];
+
+	if (pnum < 0 || pnum >= N_players)
+		return;
 
 	Assert(pnum < N_players);
 
@@ -2877,6 +2897,9 @@ multi_do_play_sound(const ubyte *buf)
 	int pnum = buf[1];
 	int sound_num = buf[2];
 	fix volume = buf[3] << 12;
+
+	if (pnum < 0 || pnum >= N_players)
+		return;
 
 	if (!Players[pnum].connected)
 		return;
