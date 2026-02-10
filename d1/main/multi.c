@@ -2119,9 +2119,13 @@ multi_do_fire(const ubyte *buf)
 void multi_do_message(const ubyte *cbuf)
 {
 	const char *buf = (const char*)cbuf;
+	int pnum = (int)cbuf[1];
+
+	if (pnum < 0 || pnum >= MAX_PLAYERS)
+		return;
 
 	if (is_observer() && !PlayerCfg.ObsPlayerChat[get_observer_game_mode()]) {
-		multi_sending_message[(int)buf[1]] = 0;
+		multi_sending_message[pnum] = 0;
         return;
     }
 
@@ -2142,11 +2146,11 @@ void multi_do_message(const ubyte *cbuf)
 		int color = 0;
 		mesbuf[0] = CC_COLOR;
 		if (Game_mode & GM_TEAM)
-			color = get_team((int)buf[1]);
+			color = get_team(pnum);
 		else
-			color = Netgame.players[(int)buf[1]].color; //(int)buf[1];
+			color = Netgame.players[pnum].color; //(int)buf[1];
 		mesbuf[1] = BM_XRGB(selected_player_rgb[color].r,selected_player_rgb[color].g,selected_player_rgb[color].b);
-		strcpy(&mesbuf[2], Players[(int)buf[1]].callsign);
+		strcpy(&mesbuf[2], Players[pnum].callsign);
 		t = strlen(mesbuf);
 		mesbuf[t] = ':';
 		mesbuf[t+1] = CC_COLOR;
@@ -2156,7 +2160,7 @@ void multi_do_message(const ubyte *cbuf)
 		if (!PlayerCfg.NoChatSound)
 			digi_play_sample(SOUND_HUD_MESSAGE, F1_0);
 		HUD_init_message(HM_MULTI, "%s %s", mesbuf, buf+2);
-		multi_sending_message[(int)buf[1]] = 0;
+		multi_sending_message[pnum] = 0;
 	}
 	else if ( (!d_strnicmp(Players[Player_num].callsign, buf+loc, colon-(buf+loc))) ||
 			  ((Game_mode & GM_TEAM) && ( (get_team(Player_num) == atoi(buf+loc)-1) || !d_strnicmp(Netgame.team_name[get_team(Player_num)], buf+loc, colon-(buf+loc)))) )
@@ -2164,11 +2168,11 @@ void multi_do_message(const ubyte *cbuf)
 		int color = 0;
 		mesbuf[0] = CC_COLOR;
 		if (Game_mode & GM_TEAM)
-			color = get_team((int)buf[1]);
+			color = get_team(pnum);
 		else
-			color = (int)buf[1];
+			color = pnum;
 		mesbuf[1] = BM_XRGB(selected_player_rgb[color].r,selected_player_rgb[color].g,selected_player_rgb[color].b);
-		strcpy(&mesbuf[2], Players[(int)buf[1]].callsign);
+		strcpy(&mesbuf[2], Players[pnum].callsign);
 		t = strlen(mesbuf);
 		mesbuf[t] = ':';
 		mesbuf[t+1] = CC_COLOR;
@@ -2178,7 +2182,7 @@ void multi_do_message(const ubyte *cbuf)
 		if (!PlayerCfg.NoChatSound)
 			digi_play_sample(SOUND_HUD_MESSAGE, F1_0);
 		HUD_init_message(HM_MULTI, "%s %s", mesbuf, colon+2);
-		multi_sending_message[(int)buf[1]] = 0;
+		multi_sending_message[pnum] = 0;
 	}
 }
 
