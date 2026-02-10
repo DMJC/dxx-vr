@@ -149,10 +149,20 @@ static void genLoopkupTable()
 static void copyFrame(unsigned short *pDest, unsigned short *pSrc)
 {
     int i;
+    unsigned char *pSrcByte;
+    unsigned char *limit = (unsigned char *)g_vBuffers + g_width * g_height * 4;
 
     for (i=0; i<8; i++)
     {
-        memcpy(pDest, pSrc, 16);
+        pSrcByte = (unsigned char *)pSrc;
+        if (pSrcByte >= (unsigned char *)g_vBuffers && pSrcByte + 16 <= limit)
+        {
+            memcpy(pDest, pSrc, 16);
+        }
+        else
+        {
+            memset(pDest, 0, 16);
+        }
         pDest += g_width;
         pSrc += g_width;
     }
