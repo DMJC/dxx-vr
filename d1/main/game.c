@@ -21,7 +21,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <setjmp.h>
 
 #include "pstypes.h"

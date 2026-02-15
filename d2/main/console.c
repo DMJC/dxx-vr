@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "window.h"
 #include "console.h"
 #include "args.h"

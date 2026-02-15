@@ -29,7 +29,7 @@
 #endif
 
 #include <errno.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 #ifndef SDL_FULLSCREEN
 #define SDL_FULLSCREEN SDL_WINDOW_FULLSCREEN
@@ -79,7 +79,7 @@
 #include <EGL/egl.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL_syswm.h>
 #else
 #include <GL/glu.h>
 #endif
