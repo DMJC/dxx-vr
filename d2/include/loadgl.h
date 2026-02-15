@@ -1285,7 +1285,7 @@ void *dll_GetSymbol(void *dllhandle,const char *symname)
 }
 #endif
 #ifdef macintosh
-#include <SDL.h>
+#include <SDL3/SDL.h>
 void *dll_LoadModule(const char *name)
 {
 	return SDL_GL_LoadLibrary(name) ? NULL : (void *) -1;	// return pointer is not dereferenced
