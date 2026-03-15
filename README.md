@@ -8,8 +8,8 @@ This has been built/tested against Debian Linux 14 but should work on other plat
 Status
 -------------------------
 VR Cutscene support - Complete
-VR Gameplay - WIP graphical issues with HUD/Render order.
-VR Menu Support - WIP/Not Working.
+VR Gameplay - Mostly complete, some text placement issues.
+VR Menu Support - Complete
 
 Building in Visual Studio
 -------------------------
