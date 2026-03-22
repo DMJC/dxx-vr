@@ -18,9 +18,9 @@
 # endif // macintosh
 #endif // _WIN32
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #ifdef USE_SDLMIXER
-#include <SDL_mixer.h>
+#include <SDL3_mixer/SDL_mixer.h>
 #endif
 
 #include "digi.h"

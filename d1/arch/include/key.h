@@ -20,7 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _KEY_H
 #define _KEY_H 
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include "pstypes.h"
 #include "fix.h"
 #include "event.h"

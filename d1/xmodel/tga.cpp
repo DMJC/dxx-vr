@@ -20,11 +20,7 @@ agrees to the terms herein an accepts the same by the use of this file.
 #include "tga.h"
 
 #if USE_SDL_IMAGE
-#	ifdef __macosx__
-#	include <SDL_image/SDL_image.h>
-#	else
-#	include <SDL_image.h>
-#	endif
+#include <SDL3_image/SDL_image.h>
 #endif
 
 #define MIN_OPACITY	224

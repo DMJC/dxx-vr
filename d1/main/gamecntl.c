@@ -94,7 +94,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/esegment.h"
 #endif
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 // Global Variables -----------------------------------------------------------
 

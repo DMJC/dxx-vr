@@ -28,7 +28,7 @@
 #else
 #include <physfs/physfs.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #ifdef _MSC_VER
 #define __EXPORT__ __declspec(dllexport)

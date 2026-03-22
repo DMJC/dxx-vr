@@ -4,8 +4,8 @@
   "version-semver": "1.1.0",
   "dependencies": [
     "physfs",
-    "sdl2",
-    "sdl2-mixer",
+    "sdl3",
+    "sdl3-mixer",
     "libpng",
     "glew",
     "openvr"

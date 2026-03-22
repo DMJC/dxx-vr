@@ -7,5 +7,5 @@ add_library(maths STATIC
 
 include_directories(../include ../arch/include ../main)
 
-find_package(SDL2 REQUIRED)
-target_include_directories(maths PUBLIC ${SDL2_INCLUDE_DIRS})
+find_package(SDL3 REQUIRED)
+target_include_directories(maths PUBLIC ${SDL3_INCLUDE_DIRS})
