@@ -236,11 +236,28 @@ void event_process(void)
 		}
 
 	}
-	for (int eye = 0; eye < 2; eye++) {
-		if (Screen_mode == SCREEN_GAME)
+	if (Screen_mode == SCREEN_GAME) {
+		for (int eye = 0; eye < 2; eye++) {
 			vr_openvr_bind_eye(eye);
-		else if (use_vr_menu)
-			vr_openvr_bind_menu_target();
+			wind = window_get_first();
+			while (wind != NULL)
+			{
+				window *prev = window_get_prev(wind);
+				if (window_is_visible(wind))
+					window_send_event(wind, &event);
+				if (!window_exists(wind))
+				{
+					if (!prev) // well there isn't a previous window ...
+						break; // ... just bail out - we've done everything for this frame we can.
+					wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
+				}
+				else
+					wind = window_get_next(wind);
+			}
+			vr_openvr_unbind_eye();
+		}
+		vr_openvr_submit_eyes();
+	} else {
 		wind = window_get_first();
 		while (wind != NULL)
 		{
@@ -256,17 +273,29 @@ void event_process(void)
 			else
 				wind = window_get_next(wind);
 		}
-		if (Screen_mode == SCREEN_GAME) {
-			vr_openvr_unbind_eye();
-		} else if (use_vr_menu) {
+
+		if (use_vr_menu)
+		{
+			vr_openvr_bind_menu_target();
+			wind = window_get_first();
+			while (wind != NULL)
+			{
+				window *prev = window_get_prev(wind);
+				if (window_is_visible(wind))
+					window_send_event(wind, &event);
+				if (!window_exists(wind))
+				{
+					if (!prev) // well there isn't a previous window ...
+						break; // ... just bail out - we've done everything for this frame we can.
+					wind = window_get_next(prev); // the current window seemed to be closed. so take the next one from the previous which should be able to point to the one after the current closed
+				}
+				else
+					wind = window_get_next(wind);
+			}
 			vr_openvr_unbind_menu_target();
-			break;
+			vr_openvr_submit_menu(1);
 		}
 	}
-	if (Screen_mode == SCREEN_GAME)
-		vr_openvr_submit_eyes();
-	else if (use_vr_menu)
-		vr_openvr_submit_menu(1);
 
 	gr_flip();
 #ifdef OGL
