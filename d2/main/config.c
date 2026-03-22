@@ -69,6 +69,7 @@ static const char GrabinputStr[] ="GrabInput";
 static const char BorderlessWindowStr[] ="BorderlessWindow";
 static const char VREnabledStr[] ="VREnabled";
 static const char VRHeadTurnsShipStr[] ="VRHeadTurnsShip";
+static const char VRProjectionScaleStr[] ="VRProjectionScale";
 
 int ReadConfigFile()
 {
@@ -122,6 +123,7 @@ int ReadConfigFile()
 	GameCfg.BorderlessWindow = 0;
 	GameCfg.VREnabled = 0;
 	GameCfg.VRHeadTurnsShip = 0;
+	GameCfg.VRProjectionScale = 100;
 
 
 	infile = PHYSFSX_openReadBuffered("descent.cfg");
@@ -243,6 +245,8 @@ int ReadConfigFile()
 				GameCfg.VREnabled = strtol(value, NULL, 10);
 			else if (!strcmp(token, VRHeadTurnsShipStr))
 				GameCfg.VRHeadTurnsShip = strtol(value, NULL, 10);
+			else if (!strcmp(token, VRProjectionScaleStr))
+				GameCfg.VRProjectionScale = strtol(value, NULL, 10);
 		}
 		d_free(line);
 	}
@@ -304,6 +308,7 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", BorderlessWindowStr, GameCfg.BorderlessWindow);
 	PHYSFSX_printf(infile, "%s=%i\n", VREnabledStr, GameCfg.VREnabled);
 	PHYSFSX_printf(infile, "%s=%i\n", VRHeadTurnsShipStr, GameCfg.VRHeadTurnsShip);
+	PHYSFSX_printf(infile, "%s=%i\n", VRProjectionScaleStr, GameCfg.VRProjectionScale);
 
 	PHYSFS_close(infile);
 

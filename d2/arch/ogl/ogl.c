@@ -1188,7 +1188,12 @@ void ogl_start_frame(void){
 		const float near_z = 0.1f;
 		const float far_z = 5000.0f;
 		if (1 && eye >= 0 && vr_openvr_eye_projection(eye, &l, &r, &b, &t))
-			glFrustum(l * near_z, r * near_z, t * near_z, b * near_z, near_z, far_z);
+		{
+			const float projection_scale = vr_openvr_projection_scale();
+			const float scaled_near_z = near_z * projection_scale;
+			const float scaled_far_z = far_z * projection_scale;
+			glFrustum(l * scaled_near_z, r * scaled_near_z, t * scaled_near_z, b * scaled_near_z, scaled_near_z, scaled_far_z);
+		}
 		else
 			gluPerspective(90.0,1.0,near_z,far_z);
 	}
