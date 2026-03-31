@@ -26,16 +26,16 @@ jobs:
         run: brew install --formula dylibbundler
 
       - name: Install library dependencies
-        run: brew install --formula sdl2 sdl12-compat physfs glew libogg mpg123 flac fluid-synth
+        run: brew install --formula sdl2 sdl12-compat physfs glew libogg mpg123 flac fluid-synth openvr
 
       - name: Configure D1
-        run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        run: cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPENVR=ON
 
       - name: Build D1
         run: cmake --build buildd1
 
       - name: Configure D2
-        run: cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        run: cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPENVR=ON
 
       - name: Build D2
         run: cmake --build buildd2

@@ -5,12 +5,12 @@ on:
 
 jobs:
   linux:
-    uses: dxx-redux/dxx-redux/.github/workflows/package-linux.yml@main
+    uses: DMJC/dxx-vr/.github/workflows/package-linux.yml@vr-support-working
   windows:
-    uses: dxx-redux/dxx-redux/.github/workflows/package-windows.yml@main
+    uses: DMJC/dxx-vr/.github/workflows/package-windows.yml@vr-support-working
   msvc:
-    uses: dxx-redux/dxx-redux/.github/workflows/package-msvc.yml@main
+    uses: DMJC/dxx-vr/.github/workflows/package-msvc.yml@vr-support-working
   macos:
-    uses: dxx-redux/dxx-redux/.github/workflows/package-macos.yml@main
+    uses: DMJC/dxx-vr/.github/workflows/package-macos.yml@vr-support-working
   macos-arm:
-    uses: dxx-redux/dxx-redux/.github/workflows/package-macos-arm.yml@main
+    uses: DMJC/dxx-vr/.github/workflows/package-macos-arm.yml@vr-support-working
