@@ -39,18 +39,19 @@ jobs:
             mingw-w64-x86_64-ntldd-git
             mingw-w64-x86_64-clang
             mingw-w64-x86_64-lld
+            mingw-w64-x86_64-openvr
 
       - name: Clone repository
         uses: actions/checkout@v3
 
       - name: Configure D1
-        run: CC=clang CXX=clang++ cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        run: CC=clang CXX=clang++ cmake -S d1 -B buildd1 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPENVR=ON
 
       - name: Build D1
-        run: cmake --build buildd1 
+        run: cmake --build buildd1
 
       - name: Configure D2
-        run: CC=clang CXX=clang++ cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        run: CC=clang CXX=clang++ cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPENVR=ON
 
       - name: Build D2
         run: cmake --build buildd2

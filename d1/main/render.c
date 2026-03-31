@@ -37,7 +37,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "physics.h"
 #include "3d.h"
-#include "globvars.h"
+#include "../3d/globvars.h"
 #include "gameseg.h"
 #include "vclip.h"
 #include "lighting.h"
@@ -1460,7 +1460,7 @@ void render_frame(fix eye_offset)
 		{
 			vms_vector window_scale_save = Window_scale;
 			if (vr_openvr_active())
-				vm_vec_scale(&Window_scale, i2f(1) / 2);
+				vm_vec_scale(&Window_scale, i2f(1)/3);
 			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
 				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,
@@ -1474,7 +1474,7 @@ void render_frame(fix eye_offset)
 		{
 			vms_vector window_scale_save = Window_scale;
 			if (vr_openvr_active())
-				vm_vec_scale(&Window_scale, i2f(1) / 2);
+				vm_vec_scale(&Window_scale, i2f(1)/3);
 			g3_set_view_matrix(&Viewer_eye,
 #ifdef USE_OPENVR
 				vr_openvr_active() ? &vr_view_orient : &Viewer->orient,

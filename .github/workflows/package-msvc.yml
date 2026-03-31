@@ -41,14 +41,14 @@ jobs:
 
     - name: Configure CMake D1
       shell: pwsh
-      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -S d1 -B buildd1
+      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D OPENVR=ON -S d1 -B buildd1
 
     - name: Build D1
       run: cmake --build buildd1
 
     - name: Configure CMake D2
       shell: pwsh
-      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -S d2 -B buildd2
+      run: cmake --preset=x86-release -D CMAKE_BUILD_TYPE=RelWithDebInfo -D OPENVR=ON -S d2 -B buildd2
 
     - name: Build D2
       run: cmake --build buildd2

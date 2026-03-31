@@ -530,7 +530,7 @@ void game_render_frame_mono(int flip)
 
 static void game_render_frame_vr(void)
 {
-	const fix vr_view_scale = i2f(1) / 2;
+	const fix vr_view_scale = i2f(1)/3;
 	game_render_frame_eye(fixmul(vr_openvr_eye_offset(vr_openvr_current_eye()), vr_view_scale));
 }
 
